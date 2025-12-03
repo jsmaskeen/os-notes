@@ -3,9 +3,11 @@
 
 ## 1. Function Pointers in C
 To use pthreads, we often need to understand function pointers.
+
 * **Why `void *`?** We use `void *` in signatures because it allows us to pass and return data of **any type**.
 
 **Syntax Examples:**
+
 * Function taking `int`, returning `void*`: `void * (*start_routine)(int)`.
 * Function taking `void*`, returning `int`: `int (*start_routine)(void *)`.
 
@@ -37,6 +39,7 @@ int pthread_join(pthread_t thread, void **retval);
   * **`retval`:** Used to retrieve the return value from the thread’s start routine (which returns `void *`).
 
 **Equivalence:**
+
 Immediately creating a thread and then joining it is equivalent to a standard **function/procedure call**.
 
 ### `pthread_detach()`
@@ -98,6 +101,7 @@ Condition variables are used when one thread is waiting for another to do someth
 ### Locking Rules
 
 1.  **Waiting (`cond_wait`):** Requires the **lock** (mutex) and the **condition variable**.
+
       * *Internally:* `cond_wait` releases the lock (so other threads can run) and puts the calling thread to sleep.
       * *Upon Return:* When returning from the wait, the thread automatically **re-acquires** the lock.
 2.  **Signaling:** We should hold the lock while signaling to prevent race conditions.

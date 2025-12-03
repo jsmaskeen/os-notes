@@ -2,7 +2,9 @@
 
 
 ## 1. The Concept
+
 A **Condition Variable (CV)** is an explicit queue that threads can put themselves on when some condition is not as desired (waiting on the condition).
+
 * **Goal:** To put a thread to sleep (waiting for another thread to complete/signal) and wake it up when the state changes, avoiding the CPU waste of busy-waiting (spinning).
 
 ### The API

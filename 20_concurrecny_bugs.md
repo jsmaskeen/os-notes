@@ -5,16 +5,22 @@
 Most concurrency bugs are not deadlocks. They typically fall into two categories:
 
 ### A. Atomicity-Violation Bugs
+
 * **Definition:** Code that is intended to be atomic but is not enforced as atomic during execution.
 * **The Fix:** Use **Locks** around the shared variable accesses to enforce atomicity.
 
 ### B. Order-Violation Bugs
+
 * **Definition:** One thread assumes that a variable created or initialized in another thread is already present/active.
+
     * *Formal:* Thread A expects to run *before* Thread B, but this order is not enforced.
+
 * **The Fix:** Use **Condition Variables** (or semaphores) to force the correct execution order.
 
 ## 2. Deadlocks
+
 **Reasons for Deadlock:**
+
 1.  **Circular Dependencies:** A cycle in the resource allocation graph.
 2.  **Encapsulation:** With extensive encapsulation (e.g., in Java libraries), we may not know which locks are held by a function (like `A.add(B)`). If another thread calls `A.add(C)` in a different order, a deadlock may occur.
 
@@ -33,12 +39,15 @@ For a deadlock to occur, **all four** of these conditions must hold:
 We can prevent deadlocks by writing code that breaks one of the four conditions.
 
 ### Strategy 1: Break "Circular Wait"
+
 * **Solution:** Provide a **Total Ordering** on lock acquisition.
 * **Mechanism:** If the system has locks L1 and L2, strictly enforce that L1 must always be acquired before L2. This prevents cyclic waits.
 
 ### Strategy 2: Break "Hold and Wait"
+
 * **Solution:** Acquire **all** locks at once, atomically.
 * **Mechanism:** Use a global "prevention" lock (meta-lock) to ensure atomicity when grabbing resources.
+
 ```c
 lock(prevention); // Global lock
 lock(L1);

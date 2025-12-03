@@ -1,9 +1,11 @@
 # Introduction to Operating Systems
 
 ## The Von Neumann Model
+
 The processor fetches an instruction from memory, then decodes it, and executes it. This is the basis of the **Von Neumann model**.
 
 ## Operating System Basics
+
 The **Operating System (OS)** is in charge of making sure the system operates correctly and efficiently in an easy-to-use manner.
 
 **Virtualization** is the process of taking a physical resource and transforming it into a more general, easy-to-use version of itself. The goal is for each program to think it has all the resources required for it exclusively (e.g., its own CPU or memory).
@@ -11,21 +13,26 @@ The **Operating System (OS)** is in charge of making sure the system operates co
 The OS provides **system calls** to allow users to interact with these resources. Because of this management role, the OS is also called a **Resource Manager**.
 
 ### CPU Virtualization Concepts
+
 * `spin()`: A function (often used in OSTEP examples) that repeatedly checks the time and returns once it has run for a second.
 * **Policy:** When multiple programs are active, the question of "which should run next?" is answered by the **policy** of the OS (e.g., Scheduling).
 * **Process Identifier (PID):** A unique identifier assigned to every running process.
 
 ### Memory Virtualization
+
 Memory is effectively an array of bytes.
+
 * **To read memory:** One must specify an address to access the data stored there.
 * **To write (or update) memory:** One must specify the address and the data to be written.
 
 **Address Spaces:** Each process accesses its own private **virtual address space** (often just called its address space). The OS maps this virtual space onto the physical memory of the machine.
 
 ## Concurrency
+
 Programs can create threads using `pthread_create()`. This introduces concurrency issues, specifically regarding **atomicity**.
 
 Example: The statement `x++;` is technically three instructions, not one:
+
 1.  $$\text{Load } x \to \text{register/accumulator}$$
 2.  $$\text{Increment register}$$
 3.  $$\text{Store register} \to x$$
@@ -34,22 +41,29 @@ Example: The statement `x++;` is technically three instructions, not one:
 * **As a group:** The statement `x++;` is **not atomic**. A context switch can occur *between* instructions 1 and 2, or 2 and 3, leading to concurrency bugs.
 
 * **Atomic:** Executing "in one go" without interruption.
+
 ## OS Design Goals
+
 * Provide high performance.
 * Minimize overheads. Overheads arise in two forms:
+
     * **Extra time** (more instructions).
     * **Extra space** (in memory or on disk).
+
 * Provide protection between applications, as well as between the OS and applications.
 * Ensure **isolation** of processes.
 
 ## Limited Direct Execution & System Calls
+
 The key difference between a **system call** and a standard procedure call is that a system call transfers control (jumps) into the OS while simultaneously raising the hardware privilege level.
 
 ### User Mode vs. Kernel Mode
+
 * **User Mode:** User applications run here. The hardware restricts what applications can do. For example, an application in user mode cannot typically initiate an I/O request to the disk, access physical memory pages directly, or send a packet on the network.
 * **Kernel Mode:** When the privilege level is raised, the OS has full access to the hardware (e.g., initiating I/O requests or allocating memory).
 
 ### The Trap Mechanism
+
 1.  When a system call is initiated (usually through a special hardware instruction called a **trap**), the hardware transfers control to a pre-specified **trap handler** (that the OS set up previously).
 2.  Simultaneously, the privilege level is raised to **Kernel Mode**.
 3.  When the OS is done servicing the request, it passes control back to the user via a special **return-from-trap** instruction.

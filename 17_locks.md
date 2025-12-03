@@ -3,17 +3,20 @@
 
 ## 1. The Lock Abstraction
 A lock is simply a variable that exists in one of two states:
+
 1.  **Available** (unlocked, free).
 2.  **Acquired** (locked, held).
 
 **Constraint:** Exactly one thread can hold a lock at a given time. This property allows locks to provide **Mutual Exclusion** between threads.
 
 ### Granularity
+
 * **Fine-grained:** Locks protect a small number of instructions (increases concurrency).
 * **Coarse-grained:** Locks protect large segments of code.
 
 ## 2. Goals of a Lock
 Any lock implementation should satisfy three goals:
+
 1.  **Mutual Exclusion:** Ensure only one thread enters the critical section.
 2.  **Fairness:** When the lock becomes free, threads waiting for it should have a fair chance to acquire it. No thread should starve.
 3.  **Performance:** Minimize the overhead introduced by using locks (especially regarding how they perform on multiple CPUs).
@@ -24,12 +27,15 @@ Any lock implementation should satisfy three goals:
 The earliest strategy (for single-processor systems) was to disable interrupts.
 
 **Mechanism:**
+
 * `lock()` $\rightarrow$ Disable interrupts.
 * `unlock()` $\rightarrow$ Enable interrupts.
 
 **Analysis:**
+
 * **Benefit:** Simplicity.
 * **Pitfalls:**
+
     1.  **Trust:** Requires the thread to perform a privileged instruction. A greedy program could acquire the lock and never release it (OS never regains control).
     2.  **Multiprocessor Failure:** This does **not** work on multiple processors. Disabling interrupts only affects one CPU; threads on other CPUs can still enter the critical section.
     3.  **Inefficiency:** Interrupt masking is slow on modern CPUs.
@@ -41,6 +47,7 @@ The earliest strategy (for single-processor systems) was to disable interrupts.
 A 2-thread algorithm that works without special hardware instructions.
 
 ### The Code
+
 ```c
 int flag[2]; // flag[i]=1 means thread i wants the lock
 int turn;    // whose turn is it?
@@ -116,6 +123,7 @@ void lock(lockt *mutex) {
   * **Correctness:** They provide mutual exclusion.
   * **Fairness:** They are **not fair**. A thread may spin forever (starvation).
   * **Performance:**
+
       * **Single CPU:** Poor performance. If a thread holding the lock is preempted, the scheduler might run $N-1$ other threads that just spin and waste time slices.
       * **Multiple CPUs:** Works well. Spinning to wait for a lock held on another processor is often effective (doesn't waste many cycles if the critical section is short).
 
@@ -145,8 +153,10 @@ typedef struct __lock_t {
 
 1.  **Acquire Guard:** Use `test-and-set` on `guard` to safely manipulate the struct.
 2.  **Check Lock (`flag`):**
+
       * If `flag == 0` (free): Set `flag = 1`, set `guard = 0` (release guard), and enter critical section.
       * If `flag == 1` (busy):
+
         1.  Insert `getthread_id()` into queue `q`.
         2.  Call `setpark()` (prepare to sleep).
         3.  Release `guard = 0`.
@@ -157,6 +167,8 @@ typedef struct __lock_t {
 1.  Acquire `guard`.
 2.  If the queue is empty, release `flag` (`flag = 0`).
 3.  If the queue is **not** empty:
+
       * `unpark()` the front thread.
       * **Note:** Do *not* set `flag = 0`. The waking thread assumes it holds the lock immediately upon returning from `park()`.
+      
 4.  Release `guard`.

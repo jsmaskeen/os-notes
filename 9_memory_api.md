@@ -5,13 +5,16 @@
 In C programming, there are two primary types of memory allocation:
 
 ### Stack Memory
+
 * **Management:** Allocations and deallocations are managed implicitly by the compiler.
 * **Terminology:** Often referred to as **automatic memory**.
 
 ### Heap Memory
+
 * **Management:** Allocation and deallocation are handled explicitly by the programmer.
 
 ## 2. Allocation: `malloc()`
+
 To allocate memory on the heap, we use `malloc()`.
 
 ```c
@@ -19,6 +22,7 @@ int *x = (int *) malloc(sizeof(int));
 ```
 
 **Memory Layout:**
+
 In the line of code above:
 
   * The pointer variable `x` itself is allocated on the **stack**.

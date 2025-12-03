@@ -5,6 +5,7 @@
 A **Semaphore** is an object with an integer value that can be manipulated using two specific routines: `sem_wait()` and `sem_post()`.
 
 **Initialization:**
+
 We must initialize the semaphore with a positive integer value before using it.
 ```c
 #include <semaphore.h>

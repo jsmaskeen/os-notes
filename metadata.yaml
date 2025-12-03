@@ -1,0 +1,12 @@
+---
+title: "Operating Systems Notes"
+subtitle: "Virtualization, Concurrency, and Persistence [3 Easy Pieces]"
+author: "Jaskirat Singh Maskeen"
+date: "Aug-Nov 2025"
+toc-title: "Table of Contents"
+geometry: "margin=1in"
+fontsize: 11pt
+header-includes:
+  - \usepackage{hyperref}
+  - \hypersetup{colorlinks=true, linkcolor=blue, urlcolor=blue}
+---
