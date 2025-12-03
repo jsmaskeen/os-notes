@@ -1,72 +1,83 @@
-Program without any input produces the same result everytime
-SPeed of bus is inversely proportional to the size, and directly to the cost.
+# I/O Devices
+*Revision Notes based on OSTEP*
 
-Systems usually have a hiereacical bus structure, CPU is attached to main mem with memory bus (fastest)
-then, we have general IO bus, (PCI= Peripheral Component Interconnect)
-and lastly we have SATA, SCSI, USB etc. this is the peripheral IO bus, the slowest.
+## 1. System Architecture
+A program without any input produces the same result every time (determinism). To interact with the world, we need Input/Output.
 
-slwoer buses can support a lot of devices.
-
-Firmware = software written within a hardware device.
-
-General structure of a device:
-
-1. It has a hardware interface, which it presents to the rest of the system. Interface consists of 3 registers: data, command and status.
-2. Then it has an internal structure, which could be propiertary and implementation specific. it might have its own microcontroller, firmware etc.
-
-Command register tells device to perform specific commands, status shows the current status, and data register is sued to pass the data to the device.
-
-General protocol to communicate with a device:
-
-1. OS waits until device status is not busy [polls the device repeatedly]
-2. OS then writes data on the data register. If main CPU is involved in data movement then it is refered to as Programmed IO (PIO).
-3. OS then puts command on the command register. this implictly signals the device that both data and command aret here and it should now execute the command.
-3. OS polls the device again until it gets a status code.
+### Bus Hierarchy
+The speed of a bus is generally **inversely proportional** to its length/size and **directly proportional** to its cost.
+* **Memory Bus:** The fastest bus, connecting the CPU to Main Memory.
+* **General I/O Bus:** Connects high-speed I/O devices (e.g., PCI = Peripheral Component Interconnect).
+* **Peripheral I/O Bus:** The slowest bus, meant to support a large number of devices (e.g., SATA, SCSI, USB).
 
 
-In this protocol, polling is inefficient. we waste cpu cycles and it might slow down the host device.. as it could use the CPU cycles for some process.
+## 2. Canonical Device Structure
+A device generally consists of two parts:
+1.  **Hardware Interface:** The interface presented to the rest of the system, typically consisting of three registers:
+    * **Status:** Shows the current state of the device.
+    * **Command:** Tells the device to perform specific tasks.
+    * **Data:** Used to pass data to/from the device.
+2.  **Internal Structure:** Implementation-specific internals. Complex devices may have their own microcontroller and **Firmware** (software written within a hardware device).
 
-To get away with polling, we can use interrrupts:
-1. isntead of polling, OS issues an interrupt, and puts the calling process to sleep [hence switches to another task].
-2. when device is finsished doing the operation, it will raise an hardware interrupt (irq, interrupt request), then CPU will jump into OS at a predetermined ISR (interrupt service routine, or the interrupt handler). (CPU finished current instruciton, save state of registers like PC), jumps to ISR, and executes the instruction there. and it will wake up the sleeping proces (which is waiting for IO).
+## 3. Protocols: CPU-Device Communication
 
-Interrupts allow the overlap of computation and IO.
+### Approach 1: Polling (Programmed I/O - PIO)
+The protocol follows these steps:
+1.  **Wait (Poll):** The OS reads the status register repeatedly until the device is not busy.
+2.  **Write Data:** The OS writes data to the data register. (If the main CPU moves the data, it is called **Programmed I/O**).
+3.  **Write Command:** The OS writes to the command register. This implicitly signals the device to execute.
+4.  **Wait (Poll):** The OS polls the device again until it receives a success/failure code.
 
-But using interrupts is not always the best solution, for example, if a deice performs tasks very quickly, interrupts can slow down the system. hence polling is better there.
+**Drawback:** Polling is inefficient. It wastes CPU cycles that could be used for other processes.
 
-Often systems have a hybrid method, poll for a while then if not done yet, switch to interrupts.
+### Approach 2: Interrupts
+To avoid wasting cycles:
+1.  The OS issues the request, puts the calling process to **sleep**, and switches to another task.
+2.  When the device finishes, it raises a hardware **Interrupt Request (IRQ)**.
+3.  The CPU pauses execution, saves the state (e.g., PC), and jumps to a pre-determined **ISR (Interrupt Service Routine)** or interrupt handler.
+4.  The ISR executes and wakes up the sleeping process.
+* **Benefit:** Allows the overlap of computation and I/O.
 
-SOmetimes interrupts can lead to a livelock. for example when a lot of packets come and generate interrupts, OS might keep serving interrupts and not actually service the request.
+**Issues with Interrupts:**
+* **Performance:** If a device is extremely fast, the overhead of context switching for interrupts slows down the system. In these cases, polling is better.
+* **Livelock:** If too many interrupts occur (e.g., a flood of network packets), the OS might spend 100% of its time processing interrupts and never make progress on the actual tasks.
 
-Another wau is coalescing the interrupts. Here device, before raising an interrupt will wait for other requests to come. hence multiple requests can go under one interrupt. but this increases the latency, if waiting time is too large.
+**Optimizations:**
+* **Hybrid Approach:** Poll for a short while; if not done, switch to interrupts.
+* **Coalescing:** The device waits for multiple requests to complete (or a timer to expire) before raising a single interrupt. This improves efficiency but increases **latency**.
 
-ANother issue, COpying of the data (With programmed IO)
-if a file is large, and process executes IO, then first CPU will copy the data to the device one word at a time, then the device will execute IO, after the copy is compelte. Hence with PIO, CPU spends too much time copying the data (When it has to send to the device)
+## 4. Data Movement: DMA
+With Programmed I/O (PIO), the CPU spends too much time copying data word-by-word from memory to the device.
 
-Hence we have a separate controller, DMA (direct memory access) [this is also a device within the system]. 
-1. THe OS tells the DMA, how much data to copy and from where to copy. the DMA engine has access to the main memory, hence process' memory and the IO device's registers. 
-2. Os is then done, and then DMA handles the copying separately. 
-3. When DMA is done, it raises an hardware interrupt signallign the oS that it is done.
-
-How should OS communicate with the device ? (the commands ?)
-
-1. ONe way is to have explicit IO instructions, which gives a way to OS to send the data to specific device registers. 
-    - But these instructiosn are usually priviledged. and a malicious program can simply run them.
-    - To prevent that hardware has protection.. for example linux has 2 rings, ring 0 for privilged instructison, and ring 3 for user. So there if CPU detects a priviliged instruction from ring 3, then it raises a fault and transfers control to OS to kill the process or do whatever.
-2. A better way is to use mmap, memory mapped IO. 
-    - Harware makes device register available as if they are memory locations.
-    - To access a particular register, the OS issues a load (to read) or store (to write) the address; the hardware then routes the load/store to the device instead of main memory.
-    - MMAP is nice cause we dont need to provide any new isntructiosn to the Instrution set which we have.
-
-Now to support varying interfacees of multiple devices, how to program the OS ?
-
-Use device drivers, these are pieces of codes which extend the OS to support the interface of a device. (70% of linux kernel is device drivers.) This is an abstraction.
-
-block read, block writes are issued, then the generic block layer routes it to specific device driver which handles the request and communication with the device.
-
-This has a downside too that rich device functionalities can go underutilised if the above layer doesnt support it. (like rich error codes might come to the application as a generic error, because the generic block layer might not know what is this specialied error code.)
+**Solution: Direct Memory Access (DMA)**
+DMA is a specific device within the system that handles data transfers.
+1.  **Setup:** The OS tells the DMA engine where the data is (source), how much to copy, and where to send it (destination).
+2.  **Execution:** The OS continues with other work while the DMA engine copies the data directly from memory to the device.
+3.  **Completion:** When done, the DMA raises an interrupt.
 
 
+## 5. Addressing Devices
+How does the OS communicate with specific device registers?
 
+### Method 1: Explicit I/O Instructions
+* The OS uses special hardware instructions to send data to specific device ports.
+* **Protection:** These are **privileged** instructions.
+    * Example: Linux uses protection rings (Ring 0 for Kernel/Privileged, Ring 3 for User). If a Ring 3 program tries to execute I/O instructions, the CPU raises a fault, allowing the OS to kill the process.
 
+### Method 2: Memory Mapped I/O (MMIO)
+* The hardware makes device registers available as if they were memory locations.
+* To access a register, the OS simply issues a standard **Load** (read) or **Store** (write) to that address.
+* **Benefit:** No new instructions are needed in the Instruction Set Architecture (ISA).
 
+## 6. The Software Stack: Device Drivers
+To support the varying interfaces of diverse devices, we use **Device Drivers**.
+* **Definition:** Code that abstracts the specific details of a device, allowing the OS to interact with it via a standard interface.
+* **Prevalence:** About 70% of the Linux kernel code consists of device drivers.
+
+**The Abstraction Flow:**
+1.  File System issues a generic request (e.g., Block Read).
+2.  **Generic Block Layer** routes the request.
+3.  **Device Driver** handles the specific communication with the device hardware.
+
+**Downside:**
+Rich device functionalities can go underutilized. For example, a "generic error" might be returned to the application because the generic block layer doesn't understand the specialized error code returned by the device.

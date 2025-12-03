@@ -1,34 +1,44 @@
-TO speed up address translation, we have somehtign called TLB, the translation lookaside buffer.
-A TLB is a part of MMU
+# Translation Lookaside Buffer (TLB)
+*Revision Notes based on OSTEP*
 
-hardware cache, stores VPN -> PFN translations.
+## 1. Introduction
+To speed up address translation, we use the **Translation Lookaside Buffer (TLB)**.
+* **Location:** It is part of the **Memory Management Unit (MMU)**.
+* **Function:** It is a hardware cache that stores **VPN $\to$ PFN** translations.
 
-Upon each reference we check first in TLB then if miss then query pagetable.
+## 2. Basic Operation
+Upon each memory reference, the hardware first checks the TLB:
 
-TLB hit: TLB holds the PFN for queired VPN
-TLB miss: TLB doesnt hold the PFN for queired VPN
+1.  **TLB Hit:** The TLB holds the PFN for the queried VPN. The translation is immediate.
+2.  **TLB Miss:** The TLB does *not* hold the PFN for the queried VPN.
+    * **Action:** The system must query the page table, update the TLB with the new `(VPN, PFN)` pair, and retry the instruction.
 
-If miss then we access the page table and update the TLB with the (VPN,PFN) pair
-and return it.
 
-TLB hit rate = \frac{Num hits}{Num access} \times 100 \%
-TLB improves performance due to spatial locality.
+## 3. Handling TLB Misses
+Who handles the miss?
+* Once a miss occurs, the hardware raises an **exception**.
+* Control is passed to the **Kernel Mode** trap handler.
+* **OS Action:** The OS queries the page table, updates the TLB, and executes a **Return-from-Trap**.
 
-large page size, less TLB misses. Small pagesize, more TLB misses.
+### Critical Distinction: Return-from-Trap
+There is a key difference in where the execution resumes compared to a standard system call:
+* **System Call:** Returns to the **next** instruction after the trap calling instruction.
+* **TLB Miss:** Returns to the **same** instruction that caused the trap. This allows the hardware to **retry** the instruction (which should now result in a TLB Hit).
 
-If program is rerun after its first execution, TLB hit rate can be 100%, improving performance due to temporal locality.
+## 4. Performance & Locality
+The performance of the TLB is measured by the Hit Rate:
+$$\text{TLB Hit Rate} = \frac{\text{Num Hits}}{\text{Num Accesses}} \times 100\%$$
 
-Who handles TLB miss ?
 
-once miss, the hardware raises an exception, and control is passed to kernel mode's trap handler. Now os will do what it needs to (query page table), update TLB and return execution at the point of exception.
-then the hardware retries.
+**Locality:**
+* **Spatial Locality:** TLB improves performance because accessing one address often means accessing nearby addresses (which are on the same page).
+    * *Page Size Effect:* Larger page sizes result in fewer TLB misses (as one entry covers more memory).
+* **Temporal Locality:** If a program is re-run after its first execution, the TLB hit rate can approach **100%** because the translations are already cached.
 
-FOR RETRUN FROM TRAP IN SYSCALL, next instructoin is after the trap calling instruction
+## 5. Context Switching
+When switching between processes, the TLB entries for the old process are no longer valid.
+* **Approach 1 (Flush):** Flush (empty) the TLB on every context switch. This ensures correctness but hurts performance (cold cache).
+* **Approach 2 (ASID):** Provide an **Address Space Identifier (ASID)** or PID to the TLB entries. This allows the TLB to differentiate entries between processes without flushing.
 
-but for TLB, next instruction is the instruction that caused trap (we want to requery after updating TLB)
-
-On context switch we can flush the TLB as it will not store the VPN-FPN entries for the new process.
-We can also provide ASID (or PID) address space identifier to the TLB. so it can differentiate the entires between processes.
-
-Cache Replacement: LRU
-
+## 6. Replacement Policy
+When the TLB is full, we must evict an entry to add a new one. The standard policy mentioned is **LRU** (Least Recently Used).

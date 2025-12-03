@@ -1,45 +1,56 @@
-Segmentation is generalized base and bounds.
-have three pairs of base and bounds registers, one for each segment.
-Code, stack, heap.
+# Segmentation
+*Revision Notes based on OSTEP*
 
-| Segment| Base |Size (Bound-Base)|
-|---|---|---|
-| Code |32K |2K|
-| Heap |34K |3K|
-| Stack| 28K |2K|
+## 1. The General Concept
+Segmentation is essentially **generalized base and bounds**. Instead of one pair of base and bounds registers for the entire process, we have multiple pairs—one for each logical segment of the address space:
+* Code
+* Stack
+* Heap
 
-try to access an illeagal address that leads to segmentation fault.
+## 2. Explicit Approach (Address Translation)
+In the explicit approach, the hardware uses specific bits of the Virtual Address (VA) to determine which segment is being accessed.
 
-Explicit appraoch of segmentation:
+**Example: 14-bit Virtual Address**
+* **Top 2 bits:** Segment ID.
+* **Bottom 12 bits:** Offset.
 
-|Segment bits| Segment| Base |Size (Bound-Base)| Grows +ve |
-|---|---|---|---|---|
-|00| Code |32K |2K| 1|
-|01| Heap |34K |3K| 1|
-|11| Stack| 28K |2K| 0|
+**Translation Logic:**
+The hardware takes the offset and adds it to (or subtracts it from) the base register of the selected segment to obtain the Physical Address (PA).
 
-so say 14 bit virtual address then first 2 bits indicate segment. last 12 bits are offset.. add (subtract) offset to (from) the base to get the PA
+### Segment Register Table
+The hardware maintains a structure defining the bounds and growth direction for each segment.
 
-Issue: one segment goes unused (10), and our max effective segment size is chopped, as its wil be divided by 4.
-[each segment is limited to a maximum size]
-
-We can implement code sharing here by adding protection bits. 
-
-This is called coarse grained segmentation.
-We can also have fine grained segmentation, where we had more segments (large number of smaller segments, early OS)
-reqquired a segment table.
-
-Here the main memeory will have small free holes. -> external fragmentation.
-
-compacting the meory by moving segments is expensive.
-
-there are algos such as best fit, worst fit, first fir, buddy algorithms (our xv6)
+| Segment Bits | Segment | Base | Size (Bound) | Grows Positive? |
+| :--- | :--- | :--- | :--- | :--- |
+| `00` | Code | 32K | 2K | 1 (Yes) |
+| `01` | Heap | 34K | 3K | 1 (Yes) |
+| `11` | Stack | 28K | 2K | 0 (No) |
 
 
-Holes in main mem-> external fragmentation
+> **Note:** Accessing an address outside these bounds leads to a **Segmentation Fault**.
 
-Allocators could of course also have the
-problem of internal fragmentation; if an allocator hands out chunks of
-memory bigger than that requested, any unasked for (and thus unused)
-space in such a chunk is considered internal fragmentation (because the
-waste occurs inside the allocated unit)
+## 3. Issues and Limitations
+1.  **Wasted Segment Space:** With 2 bits for segments (4 combinations), if we only use 3 segments (Code, Heap, Stack), one segment (e.g., `10`) goes unused.
+2.  **Limited Size:** The maximum effective segment size is reduced (chopped), as the total address space is divided by 4.
+
+## 4. Advanced Features
+* **Code Sharing:** We can implement code sharing by adding **protection bits** (e.g., Read-Only for code segments).
+* **Granularity:**
+    * **Coarse-Grained:** Small number of segments (Code, Heap, Stack) as described above.
+    * **Fine-Grained:** Large number of smaller segments (used in early OSs). This requires a **Segment Table** stored in memory.
+
+## 5. Fragmentation
+Segmentation introduces specific memory management challenges.
+
+
+### External Fragmentation
+Because segments vary in size, physical memory becomes filled with small "holes" of free space between allocated segments.
+* **Compaction:** Moving segments to compact memory is possible but **expensive**.
+* **Allocation Algorithms:** To mitigate this, OSs use algorithms such as:
+    * Best Fit
+    * Worst Fit
+    * First Fit
+    * Buddy Algorithm (used in xv6).
+
+### Internal Fragmentation
+This occurs within the allocator itself. If an allocator hands out chunks of memory bigger than requested, the unused space inside that chunk is considered **Internal Fragmentation**.

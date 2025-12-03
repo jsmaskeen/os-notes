@@ -1,167 +1,162 @@
-A lock is just a variable. It is either available (unlocked, free) or acquired (locked, held).
+# Locks & Synchronization
+*Revision Notes based on OSTEP*
 
-Exactly one thread can hold a lock at a given time.
+## 1. The Lock Abstraction
+A lock is simply a variable that exists in one of two states:
+1.  **Available** (unlocked, free).
+2.  **Acquired** (locked, held).
 
-We can include other data in the lock variable too such as which thread is holding it etc, but its usually hidden from the user.
+**Constraint:** Exactly one thread can hold a lock at a given time. This property allows locks to provide **Mutual Exclusion** between threads.
 
-Locks are used to provide mutual exclusion between the threads.
+### Granularity
+* **Fine-grained:** Locks protect a small number of instructions (increases concurrency).
+* **Coarse-grained:** Locks protect large segments of code.
 
-lock and unlock can take in the variable "lock", thus, we can have fine grained lock (which lock small number of instructions), and coarse grained locks. With fine grained locks, the concurrecny increases. 
+## 2. Goals of a Lock
+Any lock implementation should satisfy three goals:
+1.  **Mutual Exclusion:** Ensure only one thread enters the critical section.
+2.  **Fairness:** When the lock becomes free, threads waiting for it should have a fair chance to acquire it. No thread should starve.
+3.  **Performance:** Minimize the overhead introduced by using locks (especially regarding how they perform on multiple CPUs).
 
-Goals a lock should perform:
+---
 
-1. Provide Mutual Exclusion
-2. Provide fairness to the threads waiting for that lock. THis means that once the lock is free, the threads waiting on it should fairly acquire the lock. [No thread should starve while competing for the lock]
-3. Performance, overhead introduced by using locks. How will locks perfomr if we have multiple CPUs.
+## 3. Method I: Controlling Interrupts
+The earliest strategy (for single-processor systems) was to disable interrupts.
 
-Making Locks work:
+**Mechanism:**
+* `lock()` $\rightarrow$ Disable interrupts.
+* `unlock()` $\rightarrow$ Enable interrupts.
 
-Method 1: Using interrupts (hardware support for turning on and off)
+**Analysis:**
+* **Benefit:** Simplicity.
+* **Pitfalls:**
+    1.  **Trust:** Requires the thread to perform a privileged instruction. A greedy program could acquire the lock and never release it (OS never regains control).
+    2.  **Multiprocessor Failure:** This does **not** work on multiple processors. Disabling interrupts only affects one CPU; threads on other CPUs can still enter the critical section.
+    3.  **Inefficiency:** Interrupt masking is slow on modern CPUs.
 
-lock() -> Disable interrutps
-unlock() -> enable interrupts.
+---
 
-Benefit: simplicity; Pitfals: requires threads to use a priviliged instruction, we need to trusst the program to not abuse this.
+## 4. Method II: Software-Only (Peterson's Algorithm)
 
-With this method, a greedy program (thread) can simply acqire lock at the begining, and simply use cpu. Or it may never unlock the lock hence OS never regains the control of the system.
+A 2-thread algorithm that works without special hardware instructions.
 
-This approach also doesnt work with multiple processors. (Imagine multiple threads, running on differnt cpu enter a crit section, even if we disable interrupts, threads can run on the other processor and enter crit section.)
-
-When a CPU disables interrupts, it only affects that one CPU:
-- It prevents that CPU from being interrupted (e.g., by a timer interrupt or I/O interrupt).
-- It does not stop other CPUs from running.
-
-Inefficient approach and interrrupts execute slowly on the CPU.
-
-DIsabling interrupts on all CPUs: Technically prevents all concurrency but completely stalls the system 
-
-also sometimes OS may require interrupts to run on its own so disabling interrupts might hinder the OS functionality.
-
-Method 2: Peterson's turn based algo for 2 threads:
-
+### The Code
 ```c
-int flag[2];
-int turn;
-void init() {
-    flag[0] = flag[1] = 0; // 1->thread wants to grab lock
-    turn = 0; // whose turn? (thread 0 or 1?)
-}
+int flag[2]; // flag[i]=1 means thread i wants the lock
+int turn;    // whose turn is it?
+
 void lock() {
-    flag[self] = 1; // self: thread ID of caller
-    turn = 1 - self; // make it other thread’s turn
-    while ((flag[1-self] == 1) && (turn == 1 - self))
-        ; // spin-wait
+    flag[self] = 1;      // I want the lock
+    turn = 1 - self;     // I give priority to the other thread
+    
+    // Spin wait while:
+    // 1. The other thread wants the lock
+    // 2. AND it is the other thread's turn
+    while ((flag[1-self] == 1) && (turn == 1 - self)); 
 }
+
 void unlock() {
-    flag[self] = 0; // simply undo your intent
+    flag[self] = 0; // I no longer want the lock
 }
-```
-Initially no one has the lock and it's thread 0's turn to acquire the lock.
+````
 
-Idea is that when thread `i` says lock(); then flag[i] = 1 indicates that it is trying to get the lcok. and the next turn is of `j` (for 2 threads its `1-i`), now while the other thread (`j`) is trying to get the lock, and it is indeed their turn then we wait (spin).
+### How it works
 
-Once thread `j` says unlock, we exit from the while and hence acquire the lock.
+1.  **Intent:** Thread $i$ sets `flag[i] = 1` to indicate it wants to enter.
+2.  **Priority:** Thread $i$ sets `turn = 1 - i` to yield priority to the other thread.
+3.  **Spin:** It waits only if the other thread wants in **AND** it is the other thread's turn.
 
-Thread i calls lock():
-1. It sets flag[i] = 1 says “I want to enter critical section.”
-2. Then it sets turn = 1 - i : gives priority to the other thread.
-3. Then it spins while:
-    - the other thread also wants to enter (flag[1 - i] == 1), and
-    - it’s the other’s turn (turn == 1 - i).
+> **Note (Refer to Book):** For extending this logic to $N$ threads, look up the **Filter Algorithm** and **Bakery Algorithm**.
 
-When the other thread either
-- no longer wants in (flag[1 - i] == 0), or
-- gives up its turn (turn == i),
-the condition fails : thread i enters the critical section.
+-----
 
-On unlock():
-- flag[i] = 0 : thread i no longer wants the lock.
+## 5. Method III: Hardware Primitives (Spin Locks)
 
-Extension to N threads how ?? See filter and baker algo.
+Modern systems use atomic hardware instructions to build locks.
 
-Method III: Test and Set (Atomic exchange)
+### A. Test-and-Set (Atomic Exchange)
+
+This instruction updates a value and returns the *old* value atomically.
 
 ```c
-
-atomic thing: int test_and_set(int*ptr, int new){
+int test_and_set(int *ptr, int new) {
     int old = *ptr;
     *ptr = new;
     return old;
 }
 
-typedef struct lockt {
-    int flag;
-} lockt;
-
-void lock(lockt*mutex){
-    while (test_and_set(&mutex->flag,1) == 1) // idea is to test the new value and return the old value.
-    ; // spin   
-}
-
-void unlock(lockt*mutex){
-    mutex->flag = 0;
+void lock(lockt *mutex) {
+    // Spin while the old value was 1 (meaning it was already locked)
+    while (test_and_set(&mutex->flag, 1) == 1); 
 }
 ```
 
-THese are called spin locks. and on a single cpu system without premeption these done make any sense.
+### B. Compare-and-Swap (Compare-and-Exchange)
 
-Spin locks are correct (mutual exclusion) but not fair (a thread may keep on spinning trying to acquire the lock) it may lead to starvation of some thread.
-
-Performance is poor too. as say one thread is holding the lock and in a crit section. then the process is preempted, then cpu will check for all other n-1 threads waiting for this lock, and waste the cycles.
-
-But on multiple CPUs, spinlocks work good (if num PCU = num threads)
-
-The main oint is that, Spinning to wait for a lock held on another processor
-doesn’t waste many cycles in this case, and thus can be quite effective.
-
-Method IV: COmpare and Swap (compare and exchange)
-same idea:
+This instruction checks if the current value equals `old`; if so, it updates it to `new`. It is generally more powerful than Test-and-Set.
 
 ```c
-
-int comp_and_swap(int*ptr, int old, int new){
+int comp_and_swap(int *ptr, int old, int new) {
     int cur = *ptr;
-    if (cur == old){
+    if (cur == old) {
         *ptr = new;
     }
     return cur;
 }
 
-void lock(lockt* mutex){
-while (comp_and_swap(&mutex->flag, 0, 1) == 1); //spin while we dont have the lock
+void lock(lockt *mutex) {
+    while (comp_and_swap(&mutex->flag, 0, 1) == 1);
 }
 ```
 
-comp and swap is more powerful instruction than test and set (See this fact once)
+> **Note (Refer to Book):** Read about **Load-Linked / Store-Conditional** and **Fetch-And-Add** (which provides better fairness).
 
-To read : Load-Linked and Store-Conditional and Fetch-And-Add [More fair]
+### Analysis of Spin Locks
 
-with N threads contending
-for a lock; N − 1 time slices may be wasted in a similar manner, simply
-spinning and waiting for a single thread to release the lock
+  * **Correctness:** They provide mutual exclusion.
+  * **Fairness:** They are **not fair**. A thread may spin forever (starvation).
+  * **Performance:**
+      * **Single CPU:** Poor performance. If a thread holding the lock is preempted, the scheduler might run $N-1$ other threads that just spin and waste time slices.
+      * **Multiple CPUs:** Works well. Spinning to wait for a lock held on another processor is often effective (doesn't waste many cycles if the critical section is short).
 
-for few threads, yeild will work
-better than spinning but, say we have 100 threads, then 99 times we yeild. Can we optimise it further? And still there can be starvation, as a process might keep on yeilding.
+-----
 
-Now to fix this we need to sleep rather than spin. Not leave it to chance, hence we introduce queues.
+## 6. Method IV: Sleeping (Queue-Based Locks)
+
+To solve the problem of wasting CPU cycles while spinning, we use queues to put waiting threads to sleep.
+
+### Mechanisms
+
+  * `yield()`: A thread voluntarily gives up the CPU. Better than spinning, but still inefficient with many threads (context switch overhead) and allows starvation.
+  * `park()`: Puts the calling thread to sleep.
+  * `unpark(threadID)`: Wakes a specific thread.
+
+### The Solaris-Style Lock (Flag + Guard + Queue)
 
 ```c
 typedef struct __lock_t {
-    int flag;
-    int guard;
-    queue_t *q;
+    int flag;     // The actual lock
+    int guard;    // Protects the lock structure (spinlock)
+    queue_t *q;   // Queue of waiting threads
 } lock_t;
 ```
-We have a `park()` func to put a thread to sleep ,and `unpark(threadid)` to wake it up.
 
-while acquiring the lock, do `while (test-and-set(&mutex->guard,1) == 1);` spin till we get a lock for the guard, then check if the lock is free by doing `mutex->flag == 0`, then do `mutex->flag = 1` and `mutex->guard = 0`.
-But incase this check fails and the lock is held, simplt insert `getthread_id()` in `mutex->q`, `setpark()` and then do `mutex->guard = 0;`.
+**The Algorithm:**
 
-To unlock, acquire the guard by spinning and test-and-set. Then if queue is empty free the flag (lock), otherwise unpark the front thread in the queue.
+1.  **Acquire Guard:** Use `test-and-set` on `guard` to safely manipulate the struct.
+2.  **Check Lock (`flag`):**
+      * If `flag == 0` (free): Set `flag = 1`, set `guard = 0` (release guard), and enter critical section.
+      * If `flag == 1` (busy):
+        1.  Insert `getthread_id()` into queue `q`.
+        2.  Call `setpark()` (prepare to sleep).
+        3.  Release `guard = 0`.
+        4.  `park()` (sleep).
 
-set the guard to 0.
+**The Handover (Unlock):**
 
-Here also we are spinwaiting but its for the guard which will be changed in every lock and unlock instruction. Hence not that bad. this also sort of does a FIFO on who wants the lock.
-
-Notice that we do not set flag to 0 for the next thread which is waiting.. when it unparks, it is assumed that it has held the lock, as for that thread it would be asif it is returning from the park call.
-
+1.  Acquire `guard`.
+2.  If the queue is empty, release `flag` (`flag = 0`).
+3.  If the queue is **not** empty:
+      * `unpark()` the front thread.
+      * **Crucial:** Do *not* set `flag = 0`. The waking thread assumes it holds the lock immediately upon returning from `park()`.
+4.  Release `guard`.

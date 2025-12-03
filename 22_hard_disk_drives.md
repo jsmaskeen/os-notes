@@ -1,74 +1,95 @@
-Interface of HDD:
-1. Drive consists os sector. each sector is 512 B each. THey are numbered from 0 to n-1, with n sectors.
-2. 0 to n-1 is the address space fo the drive.
-3. multi sector writes are possible, but a 512B write is atomic (either it will hapen or it will not.) (manufacture garuntee). hence with a power loss during a 4KB write, there can be a torn write (incomplete write).
-4. Accessing blocks in contigous chunk is faster than random.
-5. accessing two blocks which are near each other is faster than two blocks which are far apart.
+# Hard Disk Drives (HDD)
+*Revision Notes based on OSTEP*
 
-Geometry of Disk:
-1. Platter: Circular hard surface with magnetic coating on which data is stored.
-    - Each platter has 2 sides called surfaces. [each surface stores data]
-2. Many platters are bound together around the spindle. Spindle is connected to a motor which spins the platters at constant RPM.
-3. Data is encoded on each surface in concentric circles of sectors. each of these concentric circles is called a track.
-4. Inner tracks have less sectors, outer tracks have more sectors because bruh.
-5. Read-> sense a magnetic patter. Write -> induce a change in the magnetic pattern on disk.
-6. disk head -> one per surface, does the read and write.
-7. all disk heads are attached to a single disk arm, whic can move across a surface, to position head over desired track.
+## 1. The Interface
+From the perspective of the OS, the drive presents a simple interface:
+* **Sectors:** The drive consists of sectors, typically **512 bytes** each.
+* **Address Space:** Sectors are numbered from $0$ to $n-1$. This is the address space of the drive.
+* **Performance:**
+    * Accessing blocks in a **contiguous** chunk is faster than random access.
+    * Accessing blocks near each other is faster than accessing blocks far apart.
 
-How to read, Delays:
-1. Rotational Delay: Time taken to complete one full rotation = R [worse case]. On avg. it is R/2. [same for each track.]
-2. Seek time: With multiple tracks, disk head has to move from one track to the other (if sector is on some other track), 
-    - Acceleration phase: the disk arm starts moving
-    - Coasting: arm is moving at full speed
-    - Deceleration: arm slows down
-    - Settling: arm settles on the right track. [significant time goes here]
-3. Transfer the data.
+### Atomicity & Torn Writes
+* **The Guarantee:** A 512-byte write is atomic (it either completes or doesn't happen).
+* **The Risk:** Multi-sector writes are possible, but if a power loss occurs during a larger write (e.g., 4KB), it results in a **Torn Write** (an incomplete write where only some sectors were updated).
 
-Often tehre are these things too:
-1. Track skew: blocks on subsequent tracks are shifted by skew offset so that when the arm moves to switch a track, there is less time taken to reposition the head, and the contigous block on the other track doesnt rotate away. (see image online)
-2. Since outer tracks have more sectors, these are abstracted as multi zoned disk drives, each zone has equal number of sectors per track, but the outer tracks have more sectors in a zone.
-3. Cache (or track buffer) 8-16 MB, (holds data read or written to the disk). eg. while reading a sector it might cache some previous / contigous sctors to quickly respond to subseqent reads in the same track.
+## 2. Disk Geometry
 
-Acknowledging writes:
-1. Acknowledge write complete when data has been put in memory of the disk. - write back.
-2. Acknowlege write complete when data has been actally written to the disk - write through.
+1.  **Platter:** A circular hard surface with a magnetic coating to store data. Each platter has 2 sides (surfaces).
+2.  **Spindle:** Connected to a motor that spins the platters at a constant **RPM** (Rotations Per Minute).
+3.  **Tracks:** Data is encoded in concentric circles called tracks.
+4.  **Disk Head & Arm:** There is one disk head per surface to read/write. All heads are attached to a single **disk arm** which moves across the surface to position the head over the desired track.
+5.  **Operation:**
+    * **Read:** Sense a magnetic pattern.
+    * **Write:** Induce a change in the magnetic pattern.
 
-Write back makes disk appear faster than it actually is but dangerous. (if application require data to be written in a certain order for correctness).
+### Advanced Features
+* **Track Skew:** Blocks on subsequent tracks are offset (skewed). This ensures that when the head switches tracks (seek), the next logical block hasn't rotated past the head during the repositioning time.
+    * **Multi-Zoned Disk Drives:** Outer tracks are physically longer than inner tracks. To maximize capacity, outer tracks have **more sectors** per track than inner tracks (organized into zones).
+* **Cache (Track Buffer):** Small memory (8-16 MB) on the drive. It holds data for write buffering or read-ahead (caching contiguous sectors during a read).
 
-For random read and transfer:
-$$
-T_{IO} = T_{seek} + T_{rotation} + T_{transfer}
-$$
+## 3. I/O Performance: The Math
+The total time for an I/O request ($T_{IO}$) consists of three components:
 
-Often we use $R_{IO}$ to compare disks: $R_{IO} = \frac{Size_{transfer}}{T_{IO}}$
+$$T_{IO} = T_{seek} + T_{rotation} + T_{transfer}$$
 
-avg seek time is 1/3rd of the full seek time [end to end]. because avg seek distance is 1/3 of full seek distance, see derivation in book.
 
-Disks give higher $R_{IO}$ for sequential reads than random reads, as there is only one avg seek and one avg rotation in starting a sequential read.
+### 1. Rotational Delay
+The time waiting for the desired sector to rotate under the disk head.
+* **Max:** $R$ (one full rotation).
+* **Average:** $R/2$.
 
-Disk Scheduling: Two types, one OS does, and one disk does (includes caching etc.) We see the OS one.
-- Given a set of IOs, disk scheduler examines them and decides the order of the requests. 
-- It is easy to figure out time taken cause we know drive's seek time, rotation delay etc.
+### 2. Seek Time
+The time to move the disk arm to the correct track. It involves four phases:
+1.  **Acceleration:** Arm starts moving.
+2.  **Coasting:** Arm moves at full speed.
+3.  **Deceleration:** Arm slows down.
+4.  **Settling:** Arm positions itself precisely on the track (significant time goes here).
 
-Methods:
-1. SSTF (Shortest Seek time first, or SSF, shortest seek first (SJF like))
-    - Sort the requests by their track position wrt to the current track over which head is there.
-    - But OS cant possibly know disk geometry.
-2. NBF (Nearest Block first)
-    - schedule based on order of nearest blocks.
-    - But it could lead to starvation. what if a sudden request comes for the near blcoks.
-3. SCAN [elevator]
-    - Moves across the disk, servicing requests in order, across the tracks.
-    - Single pass across the disk is called a sweep.
-    - If a request for a block comes during a sweep, which has already been serviced on this sweep, then it is queued for the enxt sweep.
-    - FSCAN: freeze the queue to be serviced while performing the sweep; It places the requests during a sweep onto another queue, to be serviced later. This avoids starvation of far away requests, by delaying the service of nearby but late arriving requests.
-    - CSCAN: Circular Scan: Instead of weeping in one direciton, sweep across the tracks, from inner to outer and from outer to inner.
-4. Both SCAN, SSTF are not purely SJF, as they do no acount rotation, they only think of seek time.
-5. Optimal: STPF (Shortest time to position first.)
-    - If seek time > rotation time, then it makes sense to serve item on the closer track.
-    - If rotation > seek time, then it makes sense to serve item on the farther track
-    - But ofc it depends
-    - But os cant often know all this but drive does. hence SPTF is usually performed inside of the drive.
+> **Rule of Thumb:** Average seek time is roughly **1/3** of full seek time (end-to-end).
 
-Disk scheduler also perform IO merging, merging multiple consecutive block's requests into one read/write. after the merge happens, then they reorder requests based on the methods above.
-    
+### 3. Transfer Time
+The time to actually read/write the data.
+
+### I/O Rate ($R_{IO}$)
+To compare disks or workloads:
+$$R_{IO} = \frac{Size_{transfer}}{T_{IO}}$$
+
+
+* **Sequential vs. Random:** Disks give much higher $R_{IO}$ for sequential reads because there is only one seek and one rotational delay at the start, amortized over many sectors.
+
+## 4. Write Acknowledgement Policies
+When does the disk tell the OS the write is done?
+1.  **Write Back:** Acknowledge when data is put in the **disk cache** (memory).
+    * *Pros:* Makes disk appear faster.
+    * *Cons:* Dangerous; data can be lost on power failure before hitting the platter.
+2.  **Write Through:** Acknowledge when data is actually written to the **disk surface**.
+    * *Pros:* Safe.
+    * *Cons:* Slower.
+
+## 5. Disk Scheduling
+Given a set of I/O requests, the scheduler decides the order of execution.
+
+### Basic Algorithms
+1.  **SSTF (Shortest Seek Time First):**
+    * Pick the request on the track closest to the current head position.
+    * *Issue:* The OS doesn't perfectly know the disk geometry (tracks/cylinders).
+2.  **NBF (Nearest Block First):**
+    * Schedule based on the nearest logical block address.
+    * *Issue:* **Starvation**. A stream of requests for nearby blocks can prevent far-away blocks from ever being serviced.
+
+### SCAN Algorithms (The Elevator)
+1.  **SCAN:** The arm sweeps across the disk (e.g., inner to outer), servicing requests in order.
+2.  **FSCAN (Freeze SCAN):** To avoid starvation of far-away requests, it freezes the queue during a sweep. New requests arriving during the sweep are placed in a separate queue for the *next* sweep.
+3.  **C-SCAN (Circular SCAN):** Sweeps in only one direction (e.g., outer to inner), then resets to the start without servicing. This provides more uniform wait times.
+
+> **Note:** SCAN and SSTF are not "purely" optimal because they ignore rotational delay.
+
+### Optimal: SPTF (Shortest Positioning Time First)
+Also called **SPTF** or **SATF** (Shortest Access Time First).
+* **Logic:** It considers both **Seek Time** and **Rotational Delay**.
+* *Example:* If Seek Time > Rotation Time, it picks the item on the closer track. If Rotation > Seek, it might pick a slightly farther track if the sector is rotationally aligned better.
+* **Implementation:** Usually performed inside the **disk drive controller** (since the drive knows the exact geometry and head position).
+
+### I/O Merging
+The scheduler often merges multiple consecutive block requests into a single, larger request before reordering. This reduces overhead.

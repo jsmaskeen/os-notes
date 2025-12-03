@@ -1,119 +1,82 @@
-Process is a abstraction provided by OS for a running program
+# Virtualization: The Process
 
-We need to provide illusion of many CPUs to the user, as a tone time only one program can run on one CPU.
+## 1. The Process Abstraction
+A **process** is an abstraction provided by the OS for a running program.
 
-How does OS virtualize CPU-> run one program after the other in fixed time slices and change between them very quickly,
+### Time Sharing (CPU)
+* **The Goal:** The OS must provide the illusion of many CPUs to the user, even though typically only one program can run on one CPU at a time.
+* **The Mechanism:** The OS runs one program for a short while, then switches to another in fixed time slices. This technique is called **Time Sharing**.
+    * **Consequence:** With more CPU sharing (more processes), the time each individual program takes to complete increases (assuming equal priority and duration).
 
-more cpu sharing -> more time each program takes to complete. (assuming same priortity and runnign duration for each program)
+> **Comparison:** The counterpart to time sharing is **Space Sharing**. Disk space is naturally space-shared; once a block is assigned to a file, it remains assigned until deleted. CPU is time-shared.
 
-Time sharing is one of the most basic techniques used by an OS to share
-a resource. By allowing the resource to be used for a little while by one
-entity, and then a little while by another, and so forth, the resource in
-question (e.g., the CPU, or a network link) can be shared by many. The
-natural counterpart of time sharing is space sharing, where a resource is
-divided (in space) among those who wish to use it. For example, disk
-space is naturally a space-shared resource, as once a block is assigned to
-a file, it is not likely to be assigned to another file until the user deletes it.
+### Key Mechanisms
+1.  **Context Switch:** The act of stopping one program and running another.
+2.  **Scheduling Policy:** Algorithms (policies) used by the OS to decide which process to run next (e.g., scheduling policy).
 
-Stopping one program and runnign another program is called a context switch. this is a time sharing mechanism
+## 2. Process Memory & Creation
+The memory that a process can address is called its **Address Space**. It is considered part of the process itself.
 
-Policies are algorithms for making some
-kind of decision within the OS
-eg: scheduling policy, page replacement policy etc.
+**Process State Requirements:**
+To track a process, the OS (specifically the `proc` struct) requires the Program Counter (PC), the Stack Pointer (top of stack), the Kernel Stack (kstack), and I/O information.
 
+### How is a process created?
+1.  **Load Code:** The OS loads the code and static variables into the address space. Modern OSs perform this **lazily** (loading code only when needed).
+2.  **Allocate Stack:** The runtime stack is reserved in the address space for local variables and return addresses.
+3.  **Allocate Heap:** Memory is reserved for the heap (for dynamic memory allocation/deallocation).
+4.  **I/O Setup:** The OS loads file descriptors (standard input/output/error).
+5.  **Start:** The OS jumps to the entry point, usually `main()`.
 
-the memory that the process can address is called its address space. It is a part of process itself.
-For the state (proc struct), we require Program Counter register/ instruction pointer register, top of stack, top of kstack, IO information etc.
+## 3. Process States
 
-HOw is a process created ? 
+* **New:** The process is being set up by the OS.
+* **Running:** The process is currently executing instructions.
+* **Ready (Runnable):** The process is ready to run but waiting for the OS to schedule it.
+* **Sleeping (Blocked):** The process is waiting for an event, such as I/O completion.
+* **Zombie (Terminated):** The process has finished but has not been cleaned up yet.
 
-OS needs to load its code and static variables into the address space for that process. modern os loads programs lazily, as an when needed, code etc is loaded.
-Then the program's runtime stack (Stack) is reserved in the address space for local variables, return addresses. We nned memory for heap (to assign and dellocate memory dynamically at runtime). OS loads the file IO descriptors and then starts running the program at the entry point, namely main().
+### The "Zombie" State
+A process enters the **Zombie** state when it calls `exit()`.
+* **Why?** It allows the parent process to examine the return code of the child to see if it executed successfully.
+* **Cleanup:**
+    1.  When a process exits, its resources (memory, FDs) are freed, but the entry (PID, exit status) remains in the process table.
+    2.  The parent must call `wait()` to collect this status. Once done, the OS removes the zombie entry completely.
+    3.  If the parent exits *without* waiting, the zombie is reassigned to `init` (PID 1), which automatically waits for and cleans up orphaned zombies.
 
-States:
-- New (initial): its a new process, being set up by OS right now
-- Running: running right now
-- Ready (Runnable): ready to run
-- Sleeping (Waiting, Blocked): In sleeping state, or waiting for IO to complete. 
-- Zombie (Terminated, Final): It will now be cleaned up by the OS
+## 4. Data Structures
+* **Process List:** The OS maintains a list to keep track of all processes.
+* **Process Control Block (PCB):** The structure holding process information (like the `proc` struct in xv6).
+* **Register Context:** Holds the contents of the process's registers when it is not running.
 
-Scheduling is the process of Ready -> Running.
+## 5. The Process API (System Calls)
 
-Whats Zombie  and WHy ?
+### `fork()`
+Creates a new process by making a copy of the parent.
+* **Return Values:**
+    * Returns `0` to the **child** process.
+    * Returns the `child PID` to the **parent** process.
+    * Returns `< 0` if the fork failed.
+* **Behavior:** It makes a **deep copy** of the stack, heap, and code. The child gets its own address space.
+* **File Descriptors:** Open file descriptors are **shared**.
+    * However, if the child closes a file descriptor, the parent's copy remains valid (and vice versa).
 
-This final state can be useful as it allows other processes
-(usually the parent that created the process) to examine the return code
-of the process and see if it the just-finished process executed successfully
+### `wait()`
+Used by the parent to wait for the child to finish.
+* **Blocking:** `wait()` blocks the parent until the child calls `exit()`.
+* **Non-Blocking:** `waitpid(-1, &status, WNOHANG)` waits for any child but returns immediately (`0`) if no child has exited, rather than blocking.
 
-1. A process finishes execution → it calls `exit()`.
+### `exec()`
+Given an executable name and arguments, `exec()` loads code and static data from that executable and **overwrites** the current process's code segment.
+* The heap and stack are re-initialized.
+* **Retains File Descriptors:** The new program inherits the open file descriptors of the calling process.
+* **No Return:** A successful `exec()` **never returns** (because the code that called it has been overwritten).
 
-   * At this point, its resources (memory, file descriptors, etc.) are freed.
-   * But the kernel still keeps a small entry in the process table (its **exit status**, PID, and some accounting info).
-   * This "dead but not yet fully removed" process is called a **zombie**.
+### Shell Redirection Example
+How does `prompt> wc p3.c > newfile.txt` work?
+1.  The shell calls `fork()` to create a child.
+2.  **Before** calling `exec()`, the child closes Standard Output (`STDOUT`) and opens `newfile.txt`.
+3.  The child calls `exec()`.
+4.  The program `wc` writes to `STDOUT`, but since that descriptor now points to the file, output goes to `newfile.txt`.
 
-2. The parent process is supposed to call `wait()` (or `waitpid()`) to collect that exit status.
-
-   * Once the parent does this, the kernel removes the zombie entry from the process table completely.
-
-3. If the parent **never calls wait()**, the zombie stays.
-
-4. If the parent itself exits without waiting → the kernel reassigns the zombie to **`init` (PID 1)**.
-
-   * `init` (or nowadays `systemd` in Linux) will automatically `wait()` on all orphaned zombies, cleaning them up.
-   * So in practice, zombies don’t linger forever unless the parent is alive but not waiting.
-
-
-OS needs a process list to keep track of all processes.
-Every processer needs a register context to hold contents of its registers.
-
-The proc struct in xv6 is often called a Process Control Block (PCB)
-
-fork(): Makes a copy of the parent process and starts executing as if it had called fork() itself.
-However the child process has a return value of 0 form fork, and the parent's fork gets a return value of the the PID of child.
-If fork() < 0 then the fork failed.
-
-Note it makes a deep copy!! Stack, heap, code everything.
-
-It gets its own address space and everything.
-
-But open file descriptors, and shared memory segemtns are common with the child process..
-
-BUT!!! if child closes some file descriptor and exits then the parent's file descriptor will NOT be closed.
-
-Child closes -> parent’s copy is still valid.
-Parent closes -> child’s copy is still valid.
-
-If parent calls wait(), then the parent will wait till the child completes its execution. (Wait is per process. So if you do fork 3 times then wait should be done three times.)
-
-if the parent does happen to run
-first, it will immediately call wait(); this system call won’t return until
-the child has run and exited.
-
-
-Wait here is blocking.. Once the child calls exit(), then the wait() unblocks and returns.
-
-To make it nonblockign: waitpid(-1, &status, WNOHANG)... here it waits for any child, and immediately retuns 0 instead of blockgin..
-if a child has exited then it returns the PID of the child.
-
-Exec()
-
-Given the name of an executable (e.g., wc), and some arguments (e.g.,
-p3.c), it loads code (and static data) from that executable and overwrites its current code segment (and current static data) with it; the heap
-and stack and other parts of the memory space of the program are reinitialized
-
-Exec also has the same file descriptors as the calling process
-
-a successful call to exec() never returns.
-
-shell works with fork and exec
-
-`prompt> wc p3.c > newfile.txt`
-
-In the example above, the output of the program wc is redirected into
-the output file newfile.txt (the greater-than sign is how said redirection is indicated). The way the shell accomplishes this task is quite simple: when the child is created, before calling exec(), the shell closes
-standard output and opens the file newfile.txt. By doing so, any output from the soon-to-be-running program wc are sent to the file instead
-of the screen.
-
-kill() system call is used to send signals to a process, including directives to go to sleep, die, and other useful imperatives.
-
-signals are a way of inter process communication.
+### `kill()`
+The `kill()` system call is used to send **signals** to a process (e.g., sleep, die). Signals are a method of Inter-Process Communication (IPC).

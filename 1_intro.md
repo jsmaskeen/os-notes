@@ -1,58 +1,58 @@
-the processor fetches an instruction from memory, then decodes it and executes it.
-THis is the basics of VOn neumann model
+# Introduction to Operating Systems
 
-operating system (OS) is in charge of making sure the
-system operates correctly and efficiently in an easy-to-use manner
+## The Von Neumann Model
+The processor fetches an instruction from memory, then decodes it, and executes it. This is the basis of the **Von Neumann model**.
 
-Virtualization is taking a physical resource and transforming it to a more general easy to use version of itself. such that each program thinks it has all the resources which are required for it.
+## Operating System Basics
+The **Operating System (OS)** is in charge of making sure the system operates correctly and efficiently in an easy-to-use manner.
 
-OS provides system calls. SO is also called a resource manager.
+**Virtualization** is the process of taking a physical resource and transforming it into a more general, easy-to-use version of itself. The goal is for each program to think it has all the resources required for it exclusively (e.g., its own CPU or memory).
 
-Spin(), a function that repeatedly checks the time and
-returns once it has run for a second.
+The OS provides **system calls** to allow users to interact with these resources. Because of this management role, the OS is also called a **Resource Manager**.
 
-amongst two programs which should run is answered by the policy of the OS.
+### CPU Virtualization Concepts
+* `Spin()`: A function (often used in OSTEP examples) that repeatedly checks the time and returns once it has run for a second.
+* **Policy:** When multiple programs are active, the question of "which should run next?" is answered by the **policy** of the OS (e.g., Scheduling).
+* **Process Identifier (PID):** A unique identifier assigned to every running process.
 
-Memory is just an array of
-bytes; to read memory, one must specify an address to be able to access
-the data stored there; to write (or update) memory, one must also specify
-the data to be written to the given address.
+### Memory Virtualization
+Memory is effectively an array of bytes.
+* **To read memory:** One must specify an address to access the data stored there.
+* **To write (or update) memory:** One must specify the address and the data to be written.
 
-the process identifier (the PID) of the running program.
-This PID is unique per running process.
+**Address Spaces:** Each process accesses its own private **virtual address space** (often just called its address space). The OS maps this virtual space onto the physical memory of the machine.
 
- Each process accesses its own private virtual address space
-(sometimes just called its address space), which the OS somehow maps
-onto the physical memory of the machine
+## Concurrency
+Programs can create threads using `pthread_create()`. This introduces concurrency issues, specifically regarding **atomicity**.
 
-programs can create threads using pthread_create()
+Example: The statement `x++;` is technically three instructions, not one:
+1.  $$\text{Load } x \to \text{register/accumulator}$$
+2.  $$\text{Increment register}$$
+3.  $$\text{Store register} \to x$$
 
-x++; is three instructiosn, move to accumu, increment, and store
-these three are not atomic..
-atmoic -> execute in one go
+* **Individually:** Each of these three hardware instructions is atomic (the hardware executes them one by one).
+* **As a group:** The statement `x++;` is **not atomic**. A context switch can occur *between* instructions 1 and 2, or 2 and 3, leading to concurrency bugs.
 
-overheads arise in a number of forms: extra time (more instructions) and extra space (in memory or on disk)
+* **Atomic:** Executing "in one go" without interruption.
+## OS Design Goals
+* Provide high performance.
+* Minimize overheads. Overheads arise in two forms:
+    * **Extra time** (more instructions).
+    * **Extra space** (in memory or on disk).
+* Provide protection between applications, as well as between the OS and applications.
+* Ensure **isolation** of processes.
 
-Goal of our OS design
-- provide high performance
-- minimize the overheads
-- provide protection between applications, as well as between the OS and applications.
-- isolation of processes.
+## Limited Direct Execution & System Calls
+The key difference between a **system call** and a standard procedure call is that a system call transfers control (jumps) into the OS while simultaneously raising the hardware privilege level.
 
+### User Mode vs. Kernel Mode
+* **User Mode:** User applications run here. The hardware restricts what applications can do. For example, an application in user mode cannot typically initiate an I/O request to the disk, access physical memory pages directly, or send a packet on the network.
+* **Kernel Mode:** When the privilege level is raised, the OS has full access to the hardware (e.g., initiating I/O requests or allocating memory).
 
-The key difference between a system call and a procedure call is that
-a system call transfers control (i.e., jumps) into the OS while simultaneously raising the hardware privilege level. User applications run in what
-is referred to as user mode which means the hardware restricts what applications can do; for example, an application running in user mode can’t
-typically initiate an I/O request to the disk, access any physical memory
-page, or send a packet on the network. When a system call is initiated
-(usually through a special hardware instruction called a trap), the hardware transfers control to a pre-specified trap handler (that the OS set up
-previously) and simultaneously raises the privilege level to kernel mode.
-In kernel mode, the OS has full access to the hardware of the system and
-thus can do things like initiate an I/O request or make more memory
-available to a program. When the OS is done servicing the request, it
-passes control back to the user via a special return-from-trap instruction,
-which reverts to user mode while simultaneously passing control back to
-where the application left off.
-IT is not necessary to execute the same program after returing form a syscall.
+### The Trap Mechanism
+1.  When a system call is initiated (usually through a special hardware instruction called a **trap**), the hardware transfers control to a pre-specified **trap handler** (that the OS set up previously).
+2.  Simultaneously, the privilege level is raised to **Kernel Mode**.
+3.  When the OS is done servicing the request, it passes control back to the user via a special **return-from-trap** instruction.
+4.  This instruction reverts the system to **User Mode** and passes control back to where the application left off.
 
-
+> **Note:** It is not necessary to execute the same program after returning from a syscall (the OS may switch to a different process).

@@ -1,46 +1,63 @@
-We cannot increase the page size, as it will cause internal fragmentation
-We can use paging with segments, this is a hybrid approach.
+# Advanced Paging & Demand Paging
+*Revision Notes based on OSTEP*
 
-So have three page tables
-One for code, one for heap and one for stack. This will reduce the unused space in the big page table. we will not need to store invalid entries.
+## 1. The Problem with Linear Page Tables
+We cannot simply increase the page size to reduce page table size, as this causes **internal fragmentation**. To solve the memory overhead of large linear page tables, we look at alternative structures.
 
-here base bound pair for each segment indicate the start and end of each page table.
+## 2. Approach 1: Hybrid Approach (Paging + Segmentation)
+This approach combines paging with segmentation.
+* **Mechanism:** Instead of one large page table, we have three separate page tables: one for **Code**, one for **Heap**, and one for **Stack**.
+* **Hardware:** The Base/Bounds register pair for each segment now indicates the **start and end of each page table** (rather than the data segment itself).
+* **Benefit:** This reduces unused space (invalid entries) in the page table, as we only allocate page table space for valid segments.
 
-we will have first 2 bits as the segment (to identify the code, heap, stakc) Next 18 bits for VPN and last bits for Offset
+**Address Translation:**
+The Virtual Address (VA) is split as follows:
+* **Top 2 bits:** Segment ID (identifies Code, Heap, or Stack).
+* **Next 18 bits:** VPN (Virtual Page Number).
+* **Last bits:** Offset.
 
-But this segmentation may casue sparse tables, and it can cause issue of external fragmentation.
-(page size is fixed but page tables can be of arbitrary sizes)
+**The Issue:**
+While page sizes are fixed, the *Page Tables* themselves can now be of arbitrary sizes. This re-introduces the problem of **External Fragmentation** when allocating memory for the page tables.
 
-MLTP (Multi level page tables)
-converting  alinear page table into a tree.
+## 3. Approach 2: Multi-Level Page Tables (MLPT)
 
-We have a page directory (which is itself a page)
-each entry (PDE) tells where a page of page table is. Or it can tell if the entire page is invalid.
-PDE has a valid bit and a PFN
-IF PDE is valid then atleast one page of the frame at PFN is valid.
+This approach converts a linear page table into a **tree** structure.
 
-Allocates space in proportion of addresses used.
+### Structure
+1.  **Page Directory (PD):** The root of the tree. It contains Page Directory Entries (PDE).
+2.  **Page Directory Entry (PDE):**
+    * Contains a **Valid Bit** and a **PFN** (Physical Frame Number).
+    * **Logic:** If a PDE is valid, it means at least one page in that specific page table chunk is valid. If the PDE is invalid, the entire corresponding page of the page table is invalid/unallocated.
 
-so the VPN has say 14 bits
-first 4 bits give the page directory index (figure out Page number), next 4 give the page table index (find out PTE) and last 6 give the offset
+**Benefit:** It allocates space in proportion to the addresses actually used, drastically saving memory for sparse address spaces.
 
-We can have three level page table too first 4 bits pd0 next 4 pd1 next 4 pt index last remaining offset
+### Address Translation Example
+Assuming a 14-bit VPN:
+1.  **First 4 bits:** Page Directory Index (to locate the PDE).
+2.  **Next 4 bits:** Page Table Index (to locate the PTE).
+3.  **Last 6 bits:** Offset.
 
-Demand paging.. disk space to move pages back and forth between ram and disk
-we have swap space.. we need to remember the disk address of a page for this.
+> **Note:** We can go deeper, for example, a three-level page table (PD0 bits $\to$ PD1 bits $\to$ PT bits $\to$ Offset).
 
-The act of accessing a page that is not in physical memory is commonly
-referred to as a page fault.
+## 4. Demand Paging
+To support address spaces larger than physical memory, we use **Demand Paging**.
+* **Swap Space:** Disk space used to move pages back and forth between RAM and disk.
+* **Requirement:** The OS must remember the disk address of every page.
 
-Upon page fault, page-fault handler code runs
+### Mechanisms
+* **Page Fault:** The act of accessing a page that is not currently in physical memory.
+* **Page-Fault Handler:** The OS code that runs upon a page fault.
+* **Present Bit:** A bit in the PTE that indicates if the page is in physical memory (1) or on disk (0).
 
-present bit tells if page is in physical memory or disk (present bit is present in PTE)
-Swap in (Disk → Memory)
-Swap out (Memory → Disk)
+**Operations:**
+* **Swap In:** Moving data from Disk $\to$ Memory.
+* **Swap Out:** Moving data from Memory $\to$ Disk.
 
-To keep a small amount of memory free, most operating systems thus
-have some kind of high watermark (HW) and low watermark (LW) to
-help decide when to start evicting pages from memory. How this works is
-as follows: when the OS notices that there are fewer than LW pages available, a background thread that is responsible for freeing memory runs.
-The thread evicts pages until there are HW pages available
+## 5. Page Replacement Policy (Swap Daemon)
+Most operating systems try to keep a small amount of memory free using a background thread (often called the swap daemon).
 
+**Watermarks:**
+The OS uses a **High Watermark (HW)** and **Low Watermark (LW)** to decide when to evict pages.
+
+1.  **Trigger:** When the OS notices that `Available Pages < LW`, the background thread runs.
+2.  **Action:** The thread evicts pages (frees memory) until `Available Pages > HW`.

@@ -1,56 +1,72 @@
-Idea is to not optimise for turnaround or response, but try to garuntee that each job obtains a certain percentage of CPU time.
+# Proportional Share Scheduling
+*Revision Notes based on OSTEP*
 
-Lottery Scheduling:
-assign tickets proportional to the percentage we want for each program.
-At each tick hold a lottery, whichever program wins schedule that. 
+## 1. The Core Concept
+The idea is **not** to optimize for turnaround or response time directly, but to guarantee that each job obtains a certain percentage of CPU time.
 
-Probabilistically achieves the goal! not deterministically.
+## 2. Lottery Scheduling
+**Mechanism:**
+* Assign **tickets** to processes proportional to the percentage of the resource they should receive.
+* At each time tick (scheduling quantum), hold a lottery.
+* Whichever program holds the winning ticket is scheduled.
 
-use RNG to hold lottery (simple).
+**Key Characteristics:**
+* **Probabilistic:** It achieves the goal probabilistically, not deterministically.
+* **Implementation:** Uses a Random Number Generator (RNG) to hold the lottery (simple to implement).
+* **Convergence:** Over a long period, the share of CPU for each program stabilizes to the desired percentage.
 
-Over a long time the percentages for share of CPU for each program stabalizes.
+### Ticket Manipulation Mechanisms
+1.  **Ticket Currency:** Allows a user with a set of tickets to allocate them among their own processes in any denomination. The OS converts this to the global currency.
+    * *Example:* User has 100 global tickets. They run 3 processes and give them 100, 300, and 500 "local" tickets. The OS calculates the global share (e.g., $100/900 \times 100$ global tickets).
+2.  **Ticket Transfer:** A process can transfer its tickets to another process temporarily.
+    * *Use Case:* Client/Server. A client sends a request to a server and "hands over" its tickets so the server runs faster to complete that specific request.
+3.  **Ticket Inflation:** A process can temporarily increase its own number of tickets to run more.
+    * *Requirement:* This only works in a non-competitive scenario where processes trust each other (no one is greedy).
 
-Ticket manipulation ways:
-1. Ticket Currency: Allows user with a set of tickets to allocate tickets to its own processes in any denomination. which will be converted to the global currecny.
-    Eg. user has 100 tickets and has 3 processes. it can allocate 100, 300, 500 local tickets (100/8, 300/8 and 100/2) tickets in globa currency.
-2. ticket transfer: A process can transfer its ticket to another process (like a process might require a helper process to do stuff, so to make it faster it gives its own tickets to the helper, which while returning, returns the tickets.)
-3.  Ticket Inflation: A process can temporarily increase it s number of tickets to allow itsef to run more. This works ina  non competitive scenario where processes trst each other. No one is greedy.
+## 3. Stride Scheduling (Deterministic Lottery)
+To avoid the randomness of Lottery scheduling, Stride scheduling is used.
 
-Deterministic Lottery? => Stride scheduling
-1. Divide a very large number (10k) by each of the ticket value. that gives us the stride value.
-2. initially the pass value of each proc is 0. Run the one with lowest pass value.
-3. Increment the pass value by stride once the process runs.
-4. Repeat.
+**Algorithm:**
+1.  **Calculate Stride:** Divide a very large number (e.g., 10,000) by each process's ticket value.
+    $$\text{Stride} = \frac{\text{Large Constant}}{\text{Tickets}}$$
+2.  **Pass Value:** Each process has a `pass` value, initially 0.
+3.  **Schedule:** Run the process with the **lowest** pass value.
+4.  **Update:** After running, increment the process's pass value by its stride.
+    $$\text{pass} = \text{pass} + \text{stride}$$
 
-If a new process arrives set all the pass values ot 0.
+**Comparison:**
+* Why prefer Lottery over Stride? Lottery requires **no global state** (like storing pass values for every process). It is easier to add new processes without calculating appropriate pass values.
 
-Now why prefer lottery? => No global state like we have for stride scheduling (storing pass values)
+## 4. Linux CFS (Completely Fair Scheduler)
+CFS implements proportional share principles efficiently.
 
-Linux CFS:
-Completely Fair Scheduler
+**Basic Mechanism:**
+* There is no fixed time slice.
+* **vruntime (Virtual Runtime):** Each process accumulates `vruntime` as it runs.
+* **Scheduling Decision:** CFS always picks the process with the **lowest** `vruntime`.
 
+### Determination of Time Slice
+CFS uses a target latency window called `sched_latency` (e.g., 48ms) to determine how long processes should run before considering a switch.
 
-SImple countic technique.. There is no fixed timeslice. Each process has a `vruntime` (Virtual runtime). which is accumulated as each rpocess runs.
-During scheduling the CFS picks the process with lowest vruntime.
+1.  **Calculation:** CFS divides `sched_latency` by the number of processes ($n$) to determine the per-process time slice.
+    $$\text{time\_slice} = \frac{\text{sched\_latency}}{n}$$
+    * *Example:* 4 processes, `sched_latency` = 48ms $\rightarrow$ Time slice = 12ms.
+    * *Dynamic Adjustment:* If 2 processes finish, the remaining 2 get $48/2 = 24$ms each.
 
-CFS uses the value `sched latency` (48ms) to determine how long should each process run before considering a switch. [Determines timeslice in a dynamic way]
+2.  **Minimum Granularity:** If there are too many processes, the calculated time slice becomes too small (causing context switch overhead).
+    * CFS enforces `min_granularity` (e.g., 6ms). The time slice will never drop below this value.
 
-CFS divides this value by the number (n) of processes running on the CPU to determine the time slice for a process.
+### Weighting (Nice Values)
+Users can assign priority using **nice** values.
+* **Range:** -20 (Highest Priority) to +19 (Lowest Priority). Default is 0.
+* **Mapping:** Each nice value is mapped to a geometric weight.
 
-Example: 4 processes, timeslice per process is 48/4 = 12ms. CPU runs them based on lowest vruntime.
-Say A, B finish at 24 ms.. now remaining are 2 processes so timeslice now is 48/2 = 24.. this runs C and D in rr till completion.
+**Formulas:**
+The time slice for process $k$ is proportional to its weight:
+$$\text{timeslice}_k = \frac{\text{weight}_k}{\sum_{i=0}^{n-1} \text{weight}_i} \times \text{sched\_latency}$$
 
-If there are too many processes then this time slice will reduce, so to prevent that, CFS adds `min_granularity`, set to `6ms` so that CFS will never set timeslice for a process to go below 6ms.
+The `vruntime` accumulation is scaled inversely by weight (higher weight = slower vruntime growth = runs more often):
+$$\text{vruntime}_i = \text{vruntime}_i + \frac{\text{weight}_0}{\text{weight}_i} \times \text{runtime}_i$$
 
-
-CFS also enables user to assing priority using nice values. nice ranges from -20 to 19 for any process, default = 0. More nice value, lower priority, -ve value means higher priority.
-
-Each nice value is ampped to a weight. we can compute the timeslice per process as:
-
-timeslice_k = \frac{weight_k}{\sum_{i=0}^{n-1} weight_i} \times sched\_latency
-
-vruntime_i = vruntime_i + \frac{weight_0}{weight_i}\times runtime_i
-
-Runtime is scaled inversly by the weight.
-
-CFS uses red black tree of current process to figure out next process.
+### Data Structure
+CFS uses a **Red-Black Tree** to store running processes, ordered by `vruntime`, allowing efficient retrieval of the next process to run.

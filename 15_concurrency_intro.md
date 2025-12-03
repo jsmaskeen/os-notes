@@ -1,56 +1,47 @@
-Each thread is kind of like an independent agent running around
-in a program.
+# Concurrency: Introduction & Threads
+*Revision Notes based on OSTEP*
 
-A multi-threaded program has more than
-one point of execution (i.e., multiple PCs, each of which is being fetched
-and executed from).
-
-They share the same address space and thus can access the same data.
-
-withing same program, running Thread 2 after thread 1 requires a context switch. Each thread has its own PC, and set of registers for computation. But all threads share the same address space as the parent program. hence can access the same data. (Stack for each thread is different. THey are also called thread-local storage.)
-
-For this context switching we have a Thread Control Block (TCB).    
-
-pthread join() waits for a particular thread to complete.
-
-Private registers: The registers are virtualized
-by the context-switch code that saves and restores them
-
-race condition: the results
-depend on the timing execution of the code.
-
-Due to race conditions we might get indeterministic output rather than a deterministic one.
-
-A critical section is a piece of
-code that accesses a shared variable (or more generally, a shared resource)
-and must not be concurrently executed by more than one thread
-
-atomic instructsion cannot be interrupted. Either they complete or they do not [garunteed by the hardware]. 
-
-A race condition arises if multiple threads of execution enter the
-critical section at roughly the same time; both attempt to update
-the shared data structure, leading to a surprising (and perhaps undesirable) outcome
-
-Using a few hardware instructions, we can build a good set of synchronization primitives.
-
-An indeterminate program consists of one or more race conditions;
-the output of the program varies from run to run, depending on
-which threads ran when. The outcome is thus not deterministic,
-something we usually expect from computer systems.
+## 1. The Thread Abstraction
+Each thread acts as an independent agent running within a program.
+* **Multiple Execution Points:** A multi-threaded program has more than one point of execution, meaning it has multiple Program Counters (PCs) being fetched and executed simultaneously.
 
 
-threads should use some kind of mutual
-exclusion primitives so that only a single thread ever enters a critical section.
+### Shared vs. Private Data
+Threads share the same **Address Space**, meaning they can access the same data. However, there are key differences in storage:
 
-It is not necessary to join the threads, eg. indefinite web server. main program passes on requests to thread workers.
+| Resource | Scope | Description |
+| :--- | :--- | :--- |
+| **Address Space** | **Shared** | All threads in the program share the heap and code. |
+| **Registers** | **Private** | Each thread has its own set of registers for computation. These are virtualized by saving/restoring them during context switches. |
+| **Stack** | **Private** | Each thread has its own stack (often called **Thread-Local Storage**). |
 
-Condition variables are useful when some kind of signaling must take place
-between threads, if one thread is waiting for another to do something before it can continue.
+### Context Switching
+* **Mechanism:** Switching from Thread 1 to Thread 2 requires a context switch.
+* **Data Structure:** The OS uses a **Thread Control Block (TCB)** to manage this state, similar to a PCB for processes.
 
-Useful for write()
-Because an interrupt may occur at any time,
-the code that updates to these shared structures (e.g., a bitmap for allocation, or the file’s inode) are critical sections
+## 2. The Core Problem: Race Conditions
+**Race Condition:** A situation where the results of a program depend on the timing execution of the code.
+* **Indeterminacy:** Due to race conditions, we might get **indeterministic** output (varying from run to run) rather than the deterministic output usually expected from computer systems.
 
-atomic means all or nothing.
+### Critical Sections
+A **Critical Section** is a piece of code that accesses a shared variable (or shared resource) and must **not** be concurrently executed by more than one thread.
+* **The Danger:** A race condition arises if multiple threads enter the critical section at roughly the same time and attempt to update the shared data structure, leading to surprising or undesirable outcomes.
+* **Example:** Code that updates shared structures like a file allocation bitmap or an inode during a `write()` operation acts as a critical section.
 
-the grouping of many actions into a single atomic action is called a transaction
+## 3. The Solution: Atomicity & Synchronization
+To solve these issues, we rely on **Atomicity** and **Synchronization Primitives**.
+
+### Atomicity
+* **Definition:** Atomic means "all or nothing".
+* **Hardware Guarantee:** Atomic instructions cannot be interrupted. Either they complete entirely, or they do not execute at all.
+* **Transactions:** The grouping of many actions into a single atomic action is called a transaction.
+
+### Synchronization Primitives
+Using a few hardware instructions, we can build a set of synchronization primitives to ensure correctness.
+* **Mutual Exclusion:** Threads should use primitives (locks) so that only a **single thread** ever enters a critical section.
+* **Condition Variables:** Useful when signaling must take place between threads (e.g., if one thread is waiting for another to do something before it can continue).
+
+## 4. Thread Usage Patterns
+* **`pthread_join()`:** A function used to wait for a particular thread to complete.
+* **Independent Threads:** It is not always necessary to join threads.
+    * *Example:* An indefinite web server where the main program passes requests to thread workers and they run independently.

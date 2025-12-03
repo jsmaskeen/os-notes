@@ -1,30 +1,50 @@
-Difference between a single CPU and a multiprocessor CPU:
+# Multiprocessor Scheduling
+*Revision Notes based on OSTEP*
 
-Each cpu has its own cache (hardware).
-Caches have 2 kinds of locality, spatial and temporal. currently accesssed info might be accesed again. and Next access might be lclose to the crurrently accessed one.
+## 1. Background: Multiprocessor Hardware
+To understand scheduling on multiple CPUs, we must understand the hardware differences compared to a single CPU.
 
-There is a problem of Cache coherence.
+* **Caches:** In a multiprocessor system, each CPU has its own cache.
+* **Locality:** Caches rely on two types of locality:
+    * **Temporal Locality:** Currently accessed info might be accessed again soon.
+    * **Spatial Locality:** The next access might be close in memory to the currently accessed one.
 
-Cache affinity:. when a prog runs on CPU, it builds up a fair bit of state in the caches (and
-TLBs) of the CPU. So next time it is favorable to run the process on the same CPU.
-otherwise on the new CPU it will be slightly slower than on the original one.
+### The Cache Coherence Problem
+Because each CPU has its own cache, updates to memory on one CPU might not be immediately visible to others, leading to the problem of **Cache Coherence**.
 
-Approach:
-SQMS (single queue multiprocessor schduling)
-maintain a single queue, pop to the next available CPU.
+### Cache Affinity
+When a program runs on a specific CPU, it builds up a significant amount of state in that CPU's caches and TLBs.
+* **Benefit:** Next time the process runs, it is favorable to run it on the *same* CPU to leverage this cached state.
+* **Cost:** If moved to a new CPU, execution will be slower because the cache is "cold" (data must be reloaded).
 
-There is an issue of cache affinity here., and we need locks to properly implement it.
+## 2. Approach 1: SQMS (Single Queue Multiprocessor Scheduling)
+**Mechanism:**
+* Maintain a single global queue of ready jobs.
+* When a CPU is available, it pops the next job from this queue.
 
-Use affinity mechanisms to try to keep the processes on CPUs where they started.
+**Issues:**
+1.  **Synchronization:** We need locks to ensure the global queue is accessed safely, which limits scalability.
+2.  **Cache Affinity:** Jobs effectively bounce randomly between CPUs, losing the benefits of cache affinity.
+    * *Fix:* SQMS implementations often use **affinity mechanisms** to try to keep processes on the CPUs where they started.
 
-MQMS (multi queue multiprocessor schduling)
+## 3. Approach 2: MQMS (Multi-Queue Multiprocessor Scheduling)
 
-Each processor has one queue, following some schdluling policy. When a job enters a system it is sent to a particular queue to run on it until completion.
-SO essentially we need a load balancer for this.
-say A,B,C,D are there and 2 processors.
+**Mechanism:**
+* Each processor has its own private queue.
+* When a job enters the system, it is assigned to a particular queue (using a load balancer) and remains there until completion.
+* **Example:** With 2 processors ($P_1, P_2$) and jobs A, B, C, D:
+    * $P_1$ runs A and B in Round Robin.
+    * $P_2$ runs C and D in Round Robin.
 
-processor 1 will run A,B in RR. and processor 2 will run C,D in rr.
+**Pros & Cons:**
+* **Pro:** It is more scalable (less lock contention) and naturally respects cache affinity.
+* **Con:** It suffers from **Load Imbalance**.
+    * *Scenario:* If A and B finish, $P_1$ sits idle while $P_2$ is still busy with C and D.
 
-More scalable but leads to load imbalance. so how to fix ?
+## 4. Solving Load Imbalance
+To fix the imbalance in MQMS, we use **Work Migration**.
 
-Work migration. one way is that the source queue (more empty) will look at target queues (less empty), and try to steal their jobs (work stealing)
+### Work Stealing
+This is a common technique to implement migration.
+* **Mechanism:** A "source" queue (which is empty or low on work) looks at "target" queues (which are full).
+* **Action:** The source attempts to "steal" jobs from the target to balance the load.

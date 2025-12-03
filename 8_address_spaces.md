@@ -1,18 +1,29 @@
-Goals:
-1. As time sharing increased, we needed more programs in memory.
-2. SO we need to isoloate the programs form each otehr. 
-3. Not let program alter code of other program/kernel itself.
+# Address Spaces: The Concept
+*Revision Notes based on OSTEP*
 
-SO makes a abstraction of physical memory called address space. address space is contigous and of the size what program needs.
-The address space fo a proagram contains all its memory namely code, stack, heap etc.
+## 1. Motivation
+As time-sharing systems became more popular, the demand to keep multiple programs in memory simultaneously increased. This introduced critical requirements:
+* **Isolation:** We need to isolate programs from each other.
+* **Protection:** We must prevent a program from altering the code or data of another program or the operating system kernel itself.
 
-Program code is at arr 0x0, heap grows positively, and stack's top is at end of the addres space and it grows -vely.
-Stack and heap grow in opposite directions so that they can use the space efficiently
+## 2. The Abstraction
+To achieve this, the OS creates an abstraction of physical memory called the **Address Space**.
+* **Definition:** It is a contiguous block of memory sized to fit what the running program needs.
+* **Contents:** The address space contains all the memory state of the running program: its code, stack, and heap.
 
-The virtual memory should be implemented in a way that is invisible to the running program.
-The assignment should be as efficient as possible to minimise space wastage and time to lookup the value stored.
-THe os should protect itself and otehr processes' memory from other processes.
+## 3. Memory Layout
 
-Protection enables isolation.
+The typical layout of a process's address space is arranged as follows:
+1.  **Code:** The program instructions are located at the bottom of the address space (starting at address `0x0`).
+2.  **Heap:** Grows positively (upwards) from the code segment.
+3.  **Stack:** The top of the stack is located at the very end of the address space and grows negatively (downwards).
 
+> **Efficiency:** The stack and heap grow in opposite directions to allow them to share the free space in the middle efficiently.
 
+## 4. Goals of Virtual Memory
+The virtual memory system should be implemented with three key goals:
+1.  **Transparency (Invisibility):** The implementation should be invisible to the running program. The program should behave as if it has its own private physical memory.
+2.  **Efficiency:** The assignment of memory should be efficient to minimize:
+    * **Space Wastage:** Reducing fragmentation.
+    * **Time Overhead:** Minimizing the time required to look up values.
+3.  **Protection:** The OS must ensure protection, enabling isolation between processes and protecting the OS itself from errant processes.
