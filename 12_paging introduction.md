@@ -1,5 +1,5 @@
 # Paging: Introduction
-*Revision Notes based on OSTEP*
+
 
 ## 1. The Concept
 Paging divides memory into fixed-sized chunks.

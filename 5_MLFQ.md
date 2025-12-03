@@ -1,5 +1,5 @@
 # Multi-Level Feedback Queue (MLFQ)
-*Revision Notes based on OSTEP*
+
 
 ## 1. The Goals
 The MLFQ scheduler tries to address two conflicting goals simultaneously:

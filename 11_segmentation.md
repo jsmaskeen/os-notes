@@ -1,5 +1,5 @@
 # Segmentation
-*Revision Notes based on OSTEP*
+
 
 ## 1. The General Concept
 Segmentation is essentially **generalized base and bounds**. Instead of one pair of base and bounds registers for the entire process, we have multiple pairs—one for each logical segment of the address space:

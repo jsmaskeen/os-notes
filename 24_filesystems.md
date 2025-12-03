@@ -1,5 +1,5 @@
 # File System Implementation (VSFS)
-*Revision Notes based on OSTEP*
+
 
 ## 1. Overall Organization (VSFS Layout)
 We introduce a simplified implementation known as **vsfs** (Very Simple File System), which mimics a typical UNIX file system.

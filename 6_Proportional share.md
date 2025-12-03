@@ -1,5 +1,5 @@
 # Proportional Share Scheduling
-*Revision Notes based on OSTEP*
+
 
 ## 1. The Core Concept
 The idea is **not** to optimize for turnaround or response time directly, but to guarantee that each job obtains a certain percentage of CPU time.
@@ -10,7 +10,7 @@ The idea is **not** to optimize for turnaround or response time directly, but to
 * At each time tick (scheduling quantum), hold a lottery.
 * Whichever program holds the winning ticket is scheduled.
 
-**Key Characteristics:**
+**Characteristics:**
 * **Probabilistic:** It achieves the goal probabilistically, not deterministically.
 * **Implementation:** Uses a Random Number Generator (RNG) to hold the lottery (simple to implement).
 * **Convergence:** Over a long period, the share of CPU for each program stabilizes to the desired percentage.

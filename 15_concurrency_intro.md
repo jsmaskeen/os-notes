@@ -1,5 +1,5 @@
 # Concurrency: Introduction & Threads
-*Revision Notes based on OSTEP*
+
 
 ## 1. The Thread Abstraction
 Each thread acts as an independent agent running within a program.

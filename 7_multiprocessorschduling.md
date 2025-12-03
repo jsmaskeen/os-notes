@@ -1,5 +1,5 @@
 # Multiprocessor Scheduling
-*Revision Notes based on OSTEP*
+
 
 ## 1. Background: Multiprocessor Hardware
 To understand scheduling on multiple CPUs, we must understand the hardware differences compared to a single CPU.

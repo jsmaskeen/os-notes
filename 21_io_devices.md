@@ -1,5 +1,5 @@
 # I/O Devices
-*Revision Notes based on OSTEP*
+
 
 ## 1. System Architecture
 A program without any input produces the same result every time (determinism). To interact with the world, we need Input/Output.

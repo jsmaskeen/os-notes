@@ -10,9 +10,9 @@ A **process** is an abstraction provided by the OS for a running program.
 
 > **Comparison:** The counterpart to time sharing is **Space Sharing**. Disk space is naturally space-shared; once a block is assigned to a file, it remains assigned until deleted. CPU is time-shared.
 
-### Key Mechanisms
+### Mechanisms
 1.  **Context Switch:** The act of stopping one program and running another.
-2.  **Scheduling Policy:** Algorithms (policies) used by the OS to decide which process to run next (e.g., scheduling policy).
+2.  **Scheduling Policy:** Algorithms (policies) used by the OS to decide which process to run next (e.g., SJF).
 
 ## 2. Process Memory & Creation
 The memory that a process can address is called its **Address Space**. It is considered part of the process itself.

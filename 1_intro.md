@@ -11,7 +11,7 @@ The **Operating System (OS)** is in charge of making sure the system operates co
 The OS provides **system calls** to allow users to interact with these resources. Because of this management role, the OS is also called a **Resource Manager**.
 
 ### CPU Virtualization Concepts
-* `Spin()`: A function (often used in OSTEP examples) that repeatedly checks the time and returns once it has run for a second.
+* `spin()`: A function (often used in OSTEP examples) that repeatedly checks the time and returns once it has run for a second.
 * **Policy:** When multiple programs are active, the question of "which should run next?" is answered by the **policy** of the OS (e.g., Scheduling).
 * **Process Identifier (PID):** A unique identifier assigned to every running process.
 

@@ -1,5 +1,5 @@
 # Address Translation & Dynamic Relocation
-*Revision Notes based on OSTEP*
+
 
 ## 1. The Basic Mechanism
 **Hardware-based address translation** converts a Virtual Address (VA) into a Physical Address (PA).

@@ -1,5 +1,5 @@
 # Memory API
-*Revision Notes based on OSTEP*
+
 
 ## 1. Types of Memory
 In C programming, there are two primary types of memory allocation:
@@ -24,7 +24,7 @@ In the line of code above:
   * The pointer variable `x` itself is allocated on the **stack**.
   * The actual integer memory it points to is allocated on the **heap**.
 
-**Key Details:**
+**Details:**
 
   * **`sizeof()` Operator:** This is a **compile-time operator**, not a function call. It determines the size of the type at compile time.
   * **Casting:** Casting the result of `malloc` (e.g., `(int *)`) does not accomplish anything functional; it is purely semantics (and often unnecessary in modern C).

@@ -1,5 +1,5 @@
 # Translation Lookaside Buffer (TLB)
-*Revision Notes based on OSTEP*
+
 
 ## 1. Introduction
 To speed up address translation, we use the **Translation Lookaside Buffer (TLB)**.
@@ -20,7 +20,7 @@ Who handles the miss?
 * Control is passed to the **Kernel Mode** trap handler.
 * **OS Action:** The OS queries the page table, updates the TLB, and executes a **Return-from-Trap**.
 
-### Critical Distinction: Return-from-Trap
+### Distinction: Return-from-Trap
 There is a key difference in where the execution resumes compared to a standard system call:
 * **System Call:** Returns to the **next** instruction after the trap calling instruction.
 * **TLB Miss:** Returns to the **same** instruction that caused the trap. This allows the hardware to **retry** the instruction (which should now result in a TLB Hit).

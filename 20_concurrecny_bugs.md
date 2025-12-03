@@ -1,5 +1,5 @@
 # Concurrency Bugs
-*Revision Notes based on OSTEP*
+
 
 ## 1. Non-Deadlock Bugs
 Most concurrency bugs are not deadlocks. They typically fall into two categories:
@@ -27,7 +27,7 @@ For a deadlock to occur, **all four** of these conditions must hold:
 4.  **Circular Wait:** There exists a circular chain of threads such that each thread holds a resource that is being requested by the next thread in the chain.
 
 
-> **Key Takeaway:** If any *one* of these four conditions is not met, a deadlock cannot occur.
+> **Takeaway:** If any *one* of these four conditions is not met, a deadlock cannot occur.
 
 ## 3. Deadlock Prevention
 We can prevent deadlocks by writing code that breaks one of the four conditions.

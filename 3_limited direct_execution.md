@@ -50,7 +50,7 @@ When switching from Process A to Process B, the OS performs a **Context Switch**
 1.  **Save State:** The OS saves a few register values for the currently running process and pushes them to its kernel stack (kstack).
 2.  **Restore State:** The OS restores the saved registers for the next process.
 
-### Critical Distinction: Interrupt vs. Context Switch
+### Distinction: Interrupt vs. Context Switch
 There is a subtle difference in *what* gets saved and *who* saves it:
 
 | Scenario | Who Saves? | What is Saved? | Where? |
@@ -63,4 +63,5 @@ There is a subtle difference in *what* gets saved and *who* saves it:
 
 ## 6. Concurrency Control
 **Problem:** What if an interrupt occurs while the OS is already handling an interrupt?
+
 **Solution:** The OS often **disables interrupts** during interrupt processing. This ensures that when one interrupt is being handled, no other one will be delivered to the CPU, preventing race conditions.

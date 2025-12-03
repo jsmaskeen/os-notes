@@ -1,5 +1,5 @@
 # Hard Disk Drives (HDD)
-*Revision Notes based on OSTEP*
+
 
 ## 1. The Interface
 From the perspective of the OS, the drive presents a simple interface:

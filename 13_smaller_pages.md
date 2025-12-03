@@ -1,5 +1,5 @@
 # Advanced Paging & Demand Paging
-*Revision Notes based on OSTEP*
+
 
 ## 1. The Problem with Linear Page Tables
 We cannot simply increase the page size to reduce page table size, as this causes **internal fragmentation**. To solve the memory overhead of large linear page tables, we look at alternative structures.

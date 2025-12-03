@@ -1,5 +1,5 @@
 # Condition Variables
-*Revision Notes based on OSTEP*
+
 
 ## 1. The Concept
 A **Condition Variable (CV)** is an explicit queue that threads can put themselves on when some condition is not as desired (waiting on the condition).

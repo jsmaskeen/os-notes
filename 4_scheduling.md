@@ -23,7 +23,7 @@ $$T_{response} = T_{first\_run} - T_{arrival}$$
 * **Mechanism:** Given that all jobs arrive at the same time, the shortest job is run first.
 * **Preemption:** None.
 
-#### Proof of Optimality (for simultaneous arrival)
+#### Proof of Optimality [Using Exchange Argument (DSA2!!)] (for simultaneous arrival)
 **Goal:** Minimize Average Waiting Time ($WT$).
 $$\text{Average } WT = \frac{1}{n}\sum_{i=1}^{n} WT_i$$
 

@@ -1,5 +1,5 @@
 # Locks & Synchronization
-*Revision Notes based on OSTEP*
+
 
 ## 1. The Lock Abstraction
 A lock is simply a variable that exists in one of two states:
@@ -158,5 +158,5 @@ typedef struct __lock_t {
 2.  If the queue is empty, release `flag` (`flag = 0`).
 3.  If the queue is **not** empty:
       * `unpark()` the front thread.
-      * **Crucial:** Do *not* set `flag = 0`. The waking thread assumes it holds the lock immediately upon returning from `park()`.
+      * **Note:** Do *not* set `flag = 0`. The waking thread assumes it holds the lock immediately upon returning from `park()`.
 4.  Release `guard`.

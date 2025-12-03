@@ -1,5 +1,5 @@
 # Pthread API
-*Revision Notes based on OSTEP*
+
 
 ## 1. Function Pointers in C
 To use pthreads, we often need to understand function pointers.

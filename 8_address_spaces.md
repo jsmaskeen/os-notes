@@ -1,5 +1,5 @@
 # Address Spaces: The Concept
-*Revision Notes based on OSTEP*
+
 
 ## 1. Motivation
 As time-sharing systems became more popular, the demand to keep multiple programs in memory simultaneously increased. This introduced critical requirements:

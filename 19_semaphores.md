@@ -1,5 +1,5 @@
 # Semaphores
-*Revision Notes based on OSTEP*
+
 
 ## 1. Definition and Initialization
 A **Semaphore** is an object with an integer value that can be manipulated using two specific routines: `sem_wait()` and `sem_post()`.

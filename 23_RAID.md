@@ -1,5 +1,5 @@
 # RAID (Redundant Array of Inexpensive Disks)
-*Revision Notes based on OSTEP*
+
 
 ## 1. Introduction & Hardware
 **RAID** uses multiple disks to work together to provide better performance, capacity, and reliability.
