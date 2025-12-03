@@ -16,7 +16,10 @@ abstract: |
   \noindent The aim is to present Virtualization, Concurrency, and Persistence in a clear, and consise manner, making it suitable for quick revision before exams. Or to be used as a cheatsheet, if the professor allows (Hello Abhishek Sir :D)
   In case of any additions or errors (typos or formatting), please feel free to reach out to me at \texttt{jaskirat.maskeen@iitgn.ac.in}.
 
-  
+  \noindent To get the latest version, visit: \url{https://jsmaskeen.github.io/blog/2025/os-notes/}.
+ 
+  \noindent Last Updated: \today
+  \vspace{0.5cm}  
   I hope this helps future readers revise quickly and understand deeply.
 
   \newpage
