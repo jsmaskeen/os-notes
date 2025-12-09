@@ -45,7 +45,9 @@ To track a process, the OS (specifically the `proc` struct) requires the Program
 ### The "Zombie" State
 
 A process enters the **Zombie** state when it calls `exit()`.
+
 * **Why?** It allows the parent process to examine the return code of the child to see if it executed successfully.
+
 * **Cleanup:**
 
     1.  When a process exits, its resources (memory, FDs) are freed, but the entry (PID, exit status) remains in the process table.

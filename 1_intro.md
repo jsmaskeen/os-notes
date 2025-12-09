@@ -2,15 +2,15 @@
 
 ## The Von Neumann Model
 
-The processor fetches an instruction from memory, then decodes it, and executes it. This is the basis of the **Von Neumann model**.
+The processor fetches an instruction from memory, then decodes it, and executes it. This is the basis of the **Von Neumann model**. The hardware is responsible for executing these instructions, managing the flow between fetching, decoding, and execution.
 
 ## Operating System Basics
 
-The **Operating System (OS)** is in charge of making sure the system operates correctly and efficiently in an easy-to-use manner.
+The **Operating System (OS)** is in charge of making sure the system operates correctly and efficiently in an easy-to-use manner. The
 
 **Virtualization** is the process of taking a physical resource and transforming it into a more general, easy-to-use version of itself. The goal is for each program to think it has all the resources required for it exclusively (e.g., its own CPU or memory).
 
-The OS provides **system calls** to allow users to interact with these resources. Because of this management role, the OS is also called a **Resource Manager**.
+The OS provides **system calls** which are, well-defined interfaces that allow user programs to request services from the operating system. System calls act as the gateway between user programs and the hardware, enabling controlled access to resources such as files, memory, and devices. Because the OS manages and arbitrates access to these resources, it is often referred to as a **Resource Manager**.
 
 ### CPU Virtualization Concepts
 
@@ -37,10 +37,9 @@ Example: The statement `x++;` is technically three instructions, not one:
 2.  $$\text{Increment register}$$
 3.  $$\text{Store register} \to x$$
 
+* **Atomic:** An operation is atomic if it completes entirely without any possibility of interruption or interference from other operations. Atomicity ensures that the operation appears indivisible, so no other thread or process can observe it in a partially completed state.
 * **Individually:** Each of these three hardware instructions is atomic (the hardware executes them one by one).
 * **As a group:** The statement `x++;` is **not atomic**. A context switch can occur *between* instructions 1 and 2, or 2 and 3, leading to concurrency bugs.
-
-* **Atomic:** Executing "in one go" without interruption.
 
 ## OS Design Goals
 
@@ -64,9 +63,9 @@ The key difference between a **system call** and a standard procedure call is th
 
 ### The Trap Mechanism
 
-1.  When a system call is initiated (usually through a special hardware instruction called a **trap**), the hardware transfers control to a pre-specified **trap handler** (that the OS set up previously).
-2.  Simultaneously, the privilege level is raised to **Kernel Mode**.
-3.  When the OS is done servicing the request, it passes control back to the user via a special **return-from-trap** instruction.
-4.  This instruction reverts the system to **User Mode** and passes control back to where the application left off.
+1.  When a system call is initiated (usually through a special hardware instruction called a **trap**), the hardware detects this event and transfers control to a pre-specified **trap handler** (that the OS set up previously).
+2.  Simultaneously, the hardware raises the privilege level to **Kernel Mode**, ensuring the OS has full access to system resources.
+3.  When the OS is done servicing the request, the hardware helps pass control back to the user via a special **return-from-trap** instruction.
+4.  This instruction, executed by the hardware, reverts the system to **User Mode** and passes control back to where the application left off.
 
 > **Note:** It is not necessary to execute the same program after returning from a syscall (the OS may switch to a different process).

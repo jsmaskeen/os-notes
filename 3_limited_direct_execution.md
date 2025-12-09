@@ -81,4 +81,4 @@ There is a subtle difference in *what* gets saved and *who* saves it:
 
 **Problem:** What if an interrupt occurs while the OS is already handling an interrupt?
 
-**Solution:** The OS often **disables interrupts** during interrupt processing. This ensures that when one interrupt is being handled, no other one will be delivered to the CPU, preventing race conditions.
+**Solution:** The OS often **disables interrupts** during interrupt processing. This ensures that when one interrupt is being handled, no other one will be delivered to the CPU, preventing race conditions. If another interrupt occurs while interrupts are disabled, most hardware will either queue (or latch) the interrupt so it can be delivered once interrupts are re-enabled, or simply remember that an interrupt occurred and deliver it later. The exact behavior depends on the hardware architecture.

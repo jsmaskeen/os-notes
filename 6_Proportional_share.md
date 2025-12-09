@@ -1,7 +1,7 @@
 # Proportional Share Scheduling
 
 
-## 1. The Core Concept
+## 1. The Concept
 
 The idea is **not** to optimize for turnaround or response time directly, but to guarantee that each job obtains a certain percentage of CPU time.
 
@@ -48,6 +48,9 @@ To avoid the randomness of Lottery scheduling, Stride scheduling is used.
 4.  **Update:** After running, increment the process's pass value by its stride.
 
     $$\text{pass} = \text{pass} + \text{stride}$$
+
+**What if a new process arrives?**
+When a new process enters the system, its stride is calculated based on its ticket value, and its pass value is typically initialized to the current minimum pass value among all processes (not zero). This prevents the need to reset all strides or pass values to zero and ensures fairness. Existing processes keep their current pass values.
 
 **Comparison:**
 

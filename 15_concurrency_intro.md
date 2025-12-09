@@ -20,7 +20,7 @@ Threads share the same **Address Space**, meaning they can access the same data.
 * **Mechanism:** Switching from Thread 1 to Thread 2 requires a context switch.
 * **Data Structure:** The OS uses a **Thread Control Block (TCB)** to manage this state, similar to a PCB for processes.
 
-## 2. The Core Problem: Race Conditions
+## 2. The Problem: Race Conditions
 
 **Race Condition:** A situation where the results of a program depend on the timing execution of the code.
 

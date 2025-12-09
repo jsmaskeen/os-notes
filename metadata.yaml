@@ -9,18 +9,18 @@ fontsize: 11pt
 header-includes:
   - \usepackage{hyperref}
   - \hypersetup{colorlinks=true, linkcolor=blue, urlcolor=blue}
-
+  - \usepackage{fontspec}
+  - \newfontfamily\japanfont{Noto Sans JP}
 abstract: |
   These notes were compiled during the Aug-Nov 2025 offering of the CS330: Operating Systems course, based on *Operating Systems: Three Easy Pieces (OSTEP)*.
-
+  \vspace{0.35cm}  
   \noindent The aim is to present Virtualization, Concurrency, and Persistence in a clear, and consise manner, making it suitable for quick revision before exams. Or to be used as a cheatsheet, if the professor allows (Hello Abhishek Sir :D)
-  In case of any additions or errors (typos or formatting), please feel free to reach out to me at \texttt{jaskirat.maskeen@iitgn.ac.in}.
-
+  In case of any additions or errors (typos or formatting), please feel free to reach out to me at \texttt{jaskirat.maskeen@iitgn.ac.in}. Also, special thanks to Abhinav Khot, for helping me proofread these notes.
+  \vspace{0.35cm}  
   \noindent To get the latest version, visit: \url{https://jsmaskeen.github.io/blog/2025/os-notes/}.
- 
   \noindent Last Updated: \today
   \vspace{0.5cm}  
-  I hope this helps future readers revise quickly and understand deeply.
+  I hope this helps future readers \japanfont ¯\\\_(ツ)\_/¯.
 
   \newpage
 ---

@@ -6,7 +6,7 @@
 Paging divides memory into fixed-sized chunks.
 
 * **Virtual Memory:** Divided into **Pages**.
-* **Physical Memory:** Divided into **Page Frames**.
+* **Physical Memory:** Divided into **Frames**.
 
 **Advantages:**
 

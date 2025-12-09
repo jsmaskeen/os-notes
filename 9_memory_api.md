@@ -6,12 +6,14 @@ In C programming, there are two primary types of memory allocation:
 
 ### Stack Memory
 
-* **Management:** Allocations and deallocations are managed implicitly by the compiler.
+* **Management (in C):** Allocations and deallocations are managed implicitly by the compiler.
 * **Terminology:** Often referred to as **automatic memory**.
+* **Note:** In other languages (e.g., C++), stack allocation is still managed by the compiler, but heap allocation can also be managed by the compiler or standard library (e.g., using `std::vector`).
 
 ### Heap Memory
 
-* **Management:** Allocation and deallocation are handled explicitly by the programmer.
+* **Management (in C):** Allocation and deallocation are handled explicitly by the programmer.
+* **Note:** In languages like C++, heap allocation can be managed by the compiler or standard library (e.g., containers such as `std::vector` automatically manage heap memory).
 
 ## 2. Allocation: `malloc()`
 
@@ -45,5 +47,5 @@ To release heap memory, we use `free()`.
 Managing heap memory manually introduces several potential bugs:
 
 1.  **Memory Leak:** Occurs when the programmer forgets to free memory.
-2.  **Dangling Pointer:** Occurs when a program tries to use memory *after* it has already been freed.
+2.  **Dangling Pointer:** This is a pointer that continues to reference a memory location after that memory has been deallocated (freed). Accessing or dereferencing a dangling pointer can result in undefined behavior, including crashes, data corruption, or security vulnerabilities, because the memory may now be used by other parts of the program or the operating system.
 3.  **Double Free:** Occurs when `free()` is called repeatedly on the same pointer. The result of this operation is **undefined**.
