@@ -32,7 +32,7 @@ The disk partition is divided into blocks (commonly **4 KB**) addressed from $0$
 Given an i-number, the OS can calculate the exact physical address.
 Since disks are sector-addressable (usually 512 bytes), not byte-addressable, the formula is:
 
-$$\text{Sector} = \frac{(\text{i-number} \times \text{sizeof(inode)}) + \text{inodeStartAddr}}{\text{sectorSize}}$$
+$$\text{Sector} = \frac{(\text{i\_number} \times \text{sizeof(inode)}) + \text{inodeStartAddr}}{\text{sectorSize}}$$
 
 
 

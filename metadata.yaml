@@ -10,6 +10,7 @@ header-includes:
   - \usepackage{hyperref}
   - \hypersetup{colorlinks=true, linkcolor=blue, urlcolor=blue}
   - \usepackage{fontspec}
+  - \usepackage{tikz}
   - \newfontfamily\japanfont{Noto Sans JP}
 abstract: |
   These notes were compiled during the Aug-Nov 2025 offering of the CS330: Operating Systems course, based on *Operating Systems: Three Easy Pieces (OSTEP)*.

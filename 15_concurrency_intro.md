@@ -3,6 +3,7 @@
 
 ## 1. The Thread Abstraction
 Each thread acts as an independent agent running within a program.
+
 * **Multiple Execution Points:** A multi-threaded program has more than one point of execution, meaning it has multiple Program Counters (PCs) being fetched and executed simultaneously.
 
 
@@ -12,7 +13,7 @@ Threads share the same **Address Space**, meaning they can access the same data.
 | Resource | Scope | Description |
 | :--- | :--- | :--- |
 | **Address Space** | **Shared** | All threads in the program share the heap and code. |
-| **Registers** | **Private** | Each thread has its own set of registers for computation. These are virtualized by saving/restoring them during context switches. |
+| **Registers** | **Private** | Each thread has its own set of registers for computation, such as the **Program Counter (PC)**, **Stack Pointer (SP)**, and **General-Purpose Registers**. These are virtualized by saving/restoring them during context switches. |
 | **Stack** | **Private** | Each thread has its own stack (often called **Thread-Local Storage**). |
 
 ### Context Switching
@@ -22,7 +23,7 @@ Threads share the same **Address Space**, meaning they can access the same data.
 
 ## 2. The Problem: Race Conditions
 
-**Race Condition:** A situation where the results of a program depend on the timing execution of the code.
+**Race Condition:** A situation where the results of a program depend on the timing execution of the code, specifically when multiple threads access shared data and attempt to modify it concurrently without proper synchronization.
 
 * **Indeterminacy:** Due to race conditions, we might get **indeterministic** output (varying from run to run) rather than the deterministic output usually expected from computer systems.
 

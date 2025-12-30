@@ -112,6 +112,13 @@ Condition variables are used when one thread is waiting for another to do someth
 
   * **Reason:** To handle **spurious wakeups** (the thread might wake up even if the condition hasn't been met).
 
+### MESA Semantics
+
+MESA semantics are used in condition variable signaling. When a thread signals a condition variable, the waiting thread is only notified that the condition **might** be true, but it is not guaranteed. The waiting thread must re-check the condition after being awakened.
+
+  * **Why? :** The signaling thread does not relinquish the lock immediately after signaling. The waiting thread must wait for the lock to be released before it can proceed.
+  * **Implication:** This is why `cond_wait` is used inside a `while` loop, to re-check the condition after acquiring the lock.
+
 ### Anti-Pattern: Spin Waiting
 
 An alternative to condition variables is spinning:
@@ -121,4 +128,4 @@ while (init == 0); // In thread A
 init = 1;          // In thread B
 ```
 
-  * **Verdict:** This is **not recommended**. It wastes CPU cycles (performs poorly) and is error-prone.
+  * This is **not recommended**. It wastes CPU cycles (performs poorly) and is error-prone.

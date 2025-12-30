@@ -44,7 +44,7 @@ The earliest strategy (for single-processor systems) was to disable interrupts.
 
 ## 4. Method II: Software-Only (Peterson's Algorithm)
 
-A 2-thread algorithm that works without special hardware instructions.
+A **2-thread algorithm** that works without special hardware instructions.
 
 ### The Code
 
@@ -65,7 +65,7 @@ void lock() {
 void unlock() {
     flag[self] = 0; // I no longer want the lock
 }
-````
+```
 
 ### How it works
 
@@ -82,6 +82,8 @@ void unlock() {
 Modern systems use atomic hardware instructions to build locks.
 
 ### A. Test-and-Set (Atomic Exchange)
+
+> **Note:** On x86 processors, the `xchg` instruction is commonly used to implement atomic exchange operations.
 
 This instruction updates a value and returns the *old* value atomically.
 

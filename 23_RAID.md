@@ -4,11 +4,15 @@
 ## 1. Introduction & Hardware
 
 **RAID** uses multiple disks to work together to provide better performance, capacity, and reliability.
+
 * **Hardware RAID:** A specialized controller with its own processor and RAM manages the disks. It presents the array to the OS as a single logical disk.
+
 * **Benefits:**
 
     * **Performance:** Achieved via parallel I/O.
+
     * **Capacity:** Aggregates multiple disks.
+
     * **Reliability:** Redundancy improves data safety (at the cost of net capacity).
 
 **Fault Model:**
@@ -168,3 +172,17 @@ Solves the "Small Write Problem" (parity disk bottleneck) by rotating the parity
 * **RAID 0:** Best for performance, zero reliability.
 * **RAID 1:** Best for random I/O performance and reliability, but expensive (50% capacity loss).
 * **RAID 5:** Best balance of capacity and reliability. Good for sequential I/O and random reads.
+
+
+| Metric           | RAID 0  | RAID 1                               | RAID 4        | RAID 5        |
+| ---------------- | ------- | ------------------------------------ | ------------- | ------------- |
+| **Capacity**     | `N · B` | `(N · B) / 2`                        | `(N − 1) · B` | `(N − 1) · B` |
+| **Reliability**  | `0`     | `1 (for sure)` \| `N / 2 (if lucky)` | `1`           | `1`           |
+| **Throughput**   |         |                                      |               |               |
+| Sequential Read  | `N · S` | `(N / 2) · S`                       | `(N − 1) · S` | `(N − 1) · S` |
+| Sequential Write | `N · S` | `(N / 2) · S`                       | `(N − 1) · S` | `(N − 1) · S` |
+| Random Read      | `N · R` | `N · R`                              | `(N − 1) · R` | `N · R`       |
+| Random Write     | `N · R` | `(N / 2) · R`                        | `(1 / 2) · R` | `(N / 4) · R` |
+| **Latency**      |         |                                      |               |               |
+| Read             | `T`     | `T`                                  | `T`           | `T`           |
+| Write            | `T`     | `T`                                  | `2T`          | `2T`          |

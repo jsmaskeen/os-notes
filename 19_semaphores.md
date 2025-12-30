@@ -152,7 +152,22 @@ Change the order for the last philosopher (Philosopher 4).
 
 ## 7. Implementation: Zemaphores
 
-Building a Semaphore using Locks and Condition Variables.
+Zemaphores are slightly different from traditional semaphores in their implementation. While semaphores rely on atomic hardware instructions for their operations, zemaphores are built using higher-level synchronization primitives like locks and condition variables. This makes zemaphores more flexible and easier to implement in environments where low-level atomic operations are not directly available.
+
+### Differences agaisnt Semaphores:
+
+1. **Implementation:**
+   - Semaphores use atomic operations provided by the hardware.
+   - Zemaphores use locks and condition variables to achieve the same functionality.
+
+2. **Performance:**
+   - Semaphores are generally faster due to their reliance on low-level atomic operations.
+   - Zemaphores may have slightly higher overhead due to the use of locks and condition variables.
+
+3. **Portability:**
+   - Zemaphores are more portable as they do not depend on hardware-specific atomic instructions.
+
+### Building a Semaphore using Locks and Condition Variables.
 
 ```c
 typedef struct {

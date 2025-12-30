@@ -55,7 +55,40 @@ The time to move the disk arm to the correct track. It involves four phases:
 3.  **Deceleration:** Arm slows down.
 4.  **Settling:** Arm positions itself precisely on the track (significant time goes here).
 
-> **Rule of Thumb:** Average seek time is roughly **1/3** of full seek time (end-to-end).
+#### Average seek time is roughly **1/3** of full seek time (end-to-end)
+
+<br>
+Proof:
+<br>
+
+1. Seek distance (to which seek time is proportional to) between two tracks $x$ and $y$ is $|x - y|$.
+
+2. Average seek distance: $$\text{Average} = \frac{\sum_{x=0}^N \sum_{y=0}^N |x - y|}{N^2}$$
+
+> Note: We divide by the total number of seeks ($N^2$) to compute the average seek distance. Here $N$ is number of tracks.
+
+3. Using integrals for summation:
+
+   $$\int_0^N \int_0^N |x - y| \, dy \, dx$$
+
+4. Break absolute value:
+
+   $$\int_0^N \int_0^x (x - y) \, dy \, dx + \int_0^N \int_x^N (y - x) \, dy \, dx$$
+
+5. Solve inner integrals:
+
+   $$\int_0^x (x - y) \, dy = x^2 - \frac{1}{2}x^2$$
+   $$\int_x^N (y - x) \, dy = \frac{1}{2}N^2 - Nx + x^2$$
+
+6. Outer integral:
+
+   $$\int_0^N (x^2 - Nx + \frac{1}{2}N^2) \, dx = \frac{1}{3}N^3$$
+
+7. Divide by $N^2$:
+
+   $$\text{Average} = \frac{\frac{1}{3}N^3}{N^2} = \frac{1}{3}N$$
+
+Thus, average seek distance is $\frac{1}{3}$ of full seek distance.
 
 ### 3. Transfer Time
 The time to actually read/write the data.
